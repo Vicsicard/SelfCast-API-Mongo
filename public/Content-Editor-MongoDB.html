@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SelfCast Content Editor (MongoDB)</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
-    <!-- Load configuration -->
-    <script src="config.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelfCast Content Editor - MongoDB Edition</title>
+  
+  <!-- Load configuration -->
+  <script src="config.js"></script>
+  
+  <!-- Load Supabase adapter (intercepts and redirects to MongoDB) -->
+  <script src="supabase-adapter.js"></script>
+  
+  <!-- Load Auth adapter -->
+  <script src="supabase-auth.js"></script>
     <!-- Load Supabase JS library -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Add Font Awesome for icons -->
