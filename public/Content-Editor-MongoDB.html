@@ -1946,8 +1946,8 @@
         document.addEventListener('DOMContentLoaded', async function() {
             log('Editor initializing...');
             
-            // Load auth helper script
-            await loadScript('js/supabase-auth.js');
+            // Auth script is already loaded in the head section
+            // No need to load it again
             
             // Check authentication first
             const isAuthenticated = await checkAuth();
