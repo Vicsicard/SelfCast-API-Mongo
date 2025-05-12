@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SelfCast Content Editor - MongoDB Edition</title>
   
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
+  
   <!-- Load configuration -->
   <script src="config.js"></script>
   
@@ -722,6 +725,28 @@
             text-decoration: underline;
         }
     </style>
+    <script>
+        // Define activateTab function globally so it's available for inline onclick handlers
+        function activateTab(tabId) {
+            // Remove active class from all tabs and tab contents
+            document.querySelectorAll('.nav-tabs a').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to selected tab and tab content
+            document.querySelector(`.nav-tabs a[href="#${tabId}"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+            
+            // Update URL hash
+            window.location.hash = tabId;
+            
+            // Update style preview if styling tab
+            if (tabId === 'styling') {
+                if (typeof updateStylePreview === 'function') {
+                    updateStylePreview();
+                }
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -1346,7 +1371,7 @@
         let currentProjectId = null;
         let autoSaveTimer = null;
         let debugMode = false;
-        let currentUser = null;
+        // Note: currentUser is managed by the auth adapter
         
         // Elements
         const statusElement = document.getElementById('status');
