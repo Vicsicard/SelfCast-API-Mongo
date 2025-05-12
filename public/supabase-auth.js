@@ -14,6 +14,27 @@ let session = null;
 const ADMIN_EMAIL = 'vicsicard@gmail.com';
 const ADMIN_PASSWORD = 'Jerrygarcia1993!';
 
+// Helper functions for session storage
+const storeSession = (sessionData) => {
+    localStorage.setItem('selfcast_session', JSON.stringify(sessionData));
+};
+
+const getStoredSession = () => {
+    const stored = localStorage.getItem('selfcast_session');
+    return stored ? JSON.parse(stored) : null;
+};
+
+const clearStoredSession = () => {
+    localStorage.removeItem('selfcast_session');
+};
+
+// Initialize from stored session if available
+const storedSession = getStoredSession();
+if (storedSession) {
+    session = storedSession;
+    currentUser = session.user;
+}
+
 // Mock Supabase auth object
 const supabaseAuth = {
   // Get current session
@@ -48,6 +69,9 @@ const supabaseAuth = {
         user: currentUser
       };
       
+      // Store session in localStorage
+      storeSession(session);
+      
       console.log('📝 MongoDB Adapter: Admin authentication successful');
       return {
         data: { user: currentUser, session },
@@ -68,34 +92,32 @@ const supabaseAuth = {
     console.log('📝 MongoDB Adapter: Sign out');
     currentUser = null;
     session = null;
+    
+    // Clear session from localStorage
+    clearStoredSession();
+    
     return { error: null };
   },
   
   // Auth state change listener
   onAuthStateChange: (callback) => {
     console.log('📝 MongoDB Adapter: Auth state change listener registered');
-    // Auto-authenticate with admin credentials
+    
+    // Check if we have a stored session
     setTimeout(() => {
-      if (!currentUser) {
-        // Set admin user
-        currentUser = {
-          id: 'admin-user',
-          email: ADMIN_EMAIL,
-          user_metadata: {
-            name: 'SelfCast Admin',
-            role: 'admin'
-          }
-        };
-        
-        session = {
-          access_token: 'admin-token-' + Date.now(),
-          user: currentUser
-        };
-        
-        console.log('📝 MongoDB Adapter: Auto-authenticated as admin');
-      }
+      const storedSession = getStoredSession();
       
-      callback('SIGNED_IN', { session });
+      if (storedSession) {
+        // We have a stored session, use it
+        session = storedSession;
+        currentUser = session.user;
+        console.log('📝 MongoDB Adapter: Using stored session');
+        callback('SIGNED_IN', { session });
+      } else {
+        // No stored session, user is signed out
+        console.log('📝 MongoDB Adapter: No stored session found');
+        callback('SIGNED_OUT', { session: null });
+      }
     }, 100);
     
     // Return unsubscribe function
