@@ -1397,33 +1397,54 @@
         
         // Check authentication status
         async function checkAuth() {
+            log('Checking authentication status...');
+            
             try {
-                const { data, error } = await window.SupabaseAuth.getSession();
+                // Check URL parameters for direct access
+                log('URL parameters:', { 
+                    search: window.location.search,
+                    all: Object.fromEntries(urlParams.entries())
+                });
+                
+                // Standard authentication check - direct access is now handled in the initialization function
+                // to avoid duplicate code and variable redeclaration
+                
+                // Normal authentication flow
+                log('Requesting session from supabaseAuth...');
+                const { data, error } = await window.supabaseAuth.getSession();
+                log('Session response:', { data, error });
                 
                 if (error) {
                     log('Authentication error:', error);
-                    redirectToLogin();
+                    showStatus('Authentication error: ' + error.message, 'error');
+                    setTimeout(() => redirectToLogin(), 1000); // Delay to show error
                     return false;
                 }
                 
                 if (!data.session) {
                     log('No active session found');
-                    redirectToLogin();
+                    showStatus('No session found, redirecting to login...', 'warning');
+                    setTimeout(() => redirectToLogin(), 1000); // Delay to show status
                     return false;
                 }
                 
                 // Get user details
-                const { data: userData } = await window.SupabaseAuth.getUser();
+                log('Getting user details...');
+                const { data: userData } = await window.supabaseAuth.getUser();
+                log('User data response:', userData);
                 currentUser = userData.user;
                 
                 // Update UI with user info
                 updateUserInfo(currentUser);
                 
                 log('User authenticated:', currentUser);
+                showStatus('Authenticated as ' + currentUser.email, 'success');
                 return true;
             } catch (err) {
+                console.error('Error checking authentication:', err);
                 log('Error checking authentication:', err);
-                redirectToLogin();
+                showStatus('Authentication error: ' + err.message, 'error');
+                setTimeout(() => redirectToLogin(), 1500); // Delay to show error
                 return false;
             }
         }
@@ -1441,25 +1462,50 @@
             }
         }
         
-        // Sign out
-        function signOut() {
-            log('Redirecting to logout page...');
-            window.location.href = 'logout.html';
+        // Sign out function
+        async function signOut() {
+            log('Signing out...');
+            showStatus('Signing out...', 'info');
+            
+            try {
+                // Call the auth adapter's signOut method
+                await window.supabaseAuth.signOut();
+                log('Sign out successful');
+                
+                // Clear any local state
+                currentUser = null;
+                
+                // Redirect to login page
+                showStatus('Signed out successfully, redirecting to login...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html?from=editor';
+                }, 1000);
+            } catch (err) {
+                log('Error signing out:', err);
+                showStatus('Error signing out: ' + err.message, 'error');
+            }
         }
+        
+        // Note: Using the async signOut function defined above
         
         // Load all projects without user filtering
         async function loadAllProjects() {
             try {
                 showStatus('Loading projects...', 'info');
+                log('Loading all projects...');
                 
-                // Get projects for current user
-                const { data: projects, error } = await window.SupabaseAuth.getUserProjects();
+                // In direct access mode, we fetch all projects from the API
+                const response = await fetch(`${window.SUPABASE_CONFIG.mongodb.apiUrl}/projects`);
                 
-                if (error) {
-                    log('Error loading projects:', error);
-                    showStatus('Error loading projects: ' + error.message, 'error');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    log('Error loading projects:', errorData);
+                    showStatus('Error loading projects: ' + (errorData.message || 'Unknown error'), 'error');
                     return;
                 }
+                
+                const projects = await response.json();
+                log('Projects loaded from API:', projects);
                 
                 if (!projects || projects.length === 0) {
                     log('No projects found for current user');
@@ -1930,34 +1976,79 @@
                 signOutButton.addEventListener('click', function(e) {
                     e.preventDefault();
                     log('Sign out button clicked');
-                    window.location.href = 'logout.html';
+                    signOut(); // Use our new signOut function instead of redirecting
                 });
             }
             if (sidebarSignOut) {
                 sidebarSignOut.addEventListener('click', function(e) {
                     e.preventDefault();
                     log('Sidebar sign out button clicked');
-                    window.location.href = 'logout.html';
+                    signOut(); // Use our new signOut function instead of redirecting
                 });
             }
         }
+        
+        // Global URL parameters for use throughout the code
+        let urlParams;
         
         // Initialize the editor
         document.addEventListener('DOMContentLoaded', async function() {
             log('Editor initializing...');
             
-            // Auth script is already loaded in the head section
-            // No need to load it again
+            // Check if we're using direct access mode
+            urlParams = new URLSearchParams(window.location.search);
+            const isDirect = urlParams.get('direct') === 'true';
             
-            // Check authentication first
-            const isAuthenticated = await checkAuth();
-            if (!isAuthenticated) return;
+            log('URL parameters on initialization:', { 
+                direct: isDirect, 
+                search: window.location.search,
+                all: Object.fromEntries(urlParams.entries())
+            });
             
-            // Continue with editor initialization
-            loadAllProjects();
-            setupEventListeners();
-            setupAutoSave();
-            setupProfileImageHandlers();
+            if (isDirect) {
+                log('Direct access mode enabled, bypassing authentication');
+                showStatus('Direct access mode enabled - authentication bypassed', 'info');
+                
+                // Set a default user for direct access
+                currentUser = {
+                    id: 'direct-access',
+                    email: 'admin@selfcast.com',
+                    user_metadata: {
+                        name: 'Direct Access'
+                    }
+                };
+                
+                updateUserInfo(currentUser);
+                
+                // Continue with editor initialization
+                try {
+                    await loadAllProjects();
+                    setupEventListeners();
+                    setupAutoSave();
+                    setupProfileImageHandlers();
+                    log('Editor initialized successfully in direct mode');
+                } catch (err) {
+                    log('Error initializing editor in direct mode:', err);
+                    showStatus('Error: ' + err.message, 'error');
+                }
+                return;
+            }
+            
+            // Standard authentication flow
+            try {
+                // Check authentication first
+                const isAuthenticated = await checkAuth();
+                if (!isAuthenticated) return;
+                
+                // Continue with editor initialization
+                loadAllProjects();
+                setupEventListeners();
+                setupAutoSave();
+                setupProfileImageHandlers();
+            } catch (err) {
+                log('Error during initialization:', err);
+                showStatus('Error initializing editor. Please try again.', 'error');
+            }
             
             // Initialize tabs - make sure main content tab is active
             const mainContentTab = document.getElementById('main-content');
@@ -1980,8 +2071,8 @@
             }
             
             // Check for project_id in URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const projectId = urlParams.get('project_id');
+            // Note: urlParams is already declared in the initialization function
+            const projectId = urlParams ? urlParams.get('project_id') : null;
             
             if (projectId) {
                 log('Project ID found in URL: ' + projectId);

@@ -96,6 +96,10 @@ const supabaseAuth = {
     // Clear session from localStorage
     clearStoredSession();
     
+    // Instead of redirecting to logout.html, we'll handle the logout directly
+    console.log('📝 MongoDB Adapter: Logout completed, returning to login page');
+    
+    // Return success
     return { error: null };
   },
   
