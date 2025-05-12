@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SelfCast MongoDB API</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #336699;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        .badge {
+            background: #27ae60;
+            color: white;
+            font-size: 0.8rem;
+            padding: 3px 8px;
+            border-radius: 4px;
+            margin-left: 10px;
+            vertical-align: middle;
+        }
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            border-left: 4px solid #336699;
+        }
+        .status {
+            display: flex;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        .status-light {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #27ae60;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .resources {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .resource {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            transition: all 0.2s ease;
+        }
+        .resource:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            border-color: #336699;
+        }
+        .resource h3 {
+            margin-top: 0;
+            color: #336699;
+        }
+        .resource p {
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        .btn {
+            display: inline-block;
+            background: #336699;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+        .btn:hover {
+            background: #264d73;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        .endpoints {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+        .endpoints li {
+            padding: 10px;
+            border-bottom: 1px solid #f1f1f1;
+        }
+        .endpoints li:last-child {
+            border-bottom: none;
+        }
+        .endpoints code {
+            background: #f1f3f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #e83e8c;
+        }
+        .endpoints .method {
+            display: inline-block;
+            width: 60px;
+            text-align: center;
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .endpoints .get {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .endpoints .post {
+            background: #d4edda;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>SelfCast API <span class="badge">MongoDB Edition</span></h1>
+        <p>A modern, document-based API for SelfCast Dynamic content management</p>
+    </header>
+
+    <div class="status">
+        <div>
+            <span class="status-light"></span>
+            API Status: Running
+        </div>
+        <div id="mongodb-status">
+            Checking MongoDB connection...
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>API Endpoints</h2>
+        <ul class="endpoints">
+            <li>
+                <span class="method get">GET</span>
+                <code>/api/projects</code> - Get a list of all projects
+            </li>
+            <li>
+                <span class="method get">GET</span>
+                <code>/api/projects/:projectId</code> - Get a specific project
+            </li>
+            <li>
+                <span class="method get">GET</span>
+                <code>/api/projects/:projectId/content</code> - Get content for a specific project
+            </li>
+            <li>
+                <span class="method post">POST</span>
+                <code>/api/projects</code> - Create a new project
+            </li>
+            <li>
+                <span class="method post">POST</span>
+                <code>/api/projects/:projectId/content</code> - Update project content
+            </li>
+        </ul>
+    </div>
+
+    <h2>Available Resources</h2>
+    <div class="resources">
+        <div class="resource">
+            <h3>MongoDB Content Editor</h3>
+            <p>Edit project content using our MongoDB backend</p>
+            <a href="./Content-Editor-MongoDB.html" class="btn">Open Editor</a>
+        </div>
+        <div class="resource">
+            <h3>Integration Example</h3>
+            <p>See how the adapter connects to MongoDB</p>
+            <a href="./integration-example.html" class="btn">View Example</a>
+        </div>
+        <div class="resource">
+            <h3>API Documentation</h3>
+            <p>Full documentation for all endpoints</p>
+            <a href="./api-docs.html" class="btn btn-secondary">View Docs</a>
+        </div>
+        <div class="resource">
+            <h3>Sample Data</h3>
+            <p>View the sample hypnotherapy project data</p>
+            <a href="/api/projects/adam-hyp-1" class="btn btn-secondary">View Data</a>
+        </div>
+    </div>
+
+    <script>
+        // Check if MongoDB is connected
+        fetch('/api/projects')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('mongodb-status').innerHTML = 
+                    '<span style="color: #27ae60;">✓</span> MongoDB connected successfully';
+            })
+            .catch(error => {
+                document.getElementById('mongodb-status').innerHTML = 
+                    '<span style="color: #e74c3c;">✗</span> MongoDB connection error';
+                document.querySelector('.status-light').style.background = '#e74c3c';
+            });
+    </script>
+</body>
+</html>

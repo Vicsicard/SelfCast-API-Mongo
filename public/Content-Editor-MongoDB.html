@@ -1,0 +1,2473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SelfCast Content Editor (MongoDB)</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+    <!-- Load configuration -->
+    <script src="config.js"></script>
+    <!-- Load Supabase JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --error-color: #e74c3c;
+            --info-color: #3498db;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --border-color: #dee2e6;
+            --border-radius: 8px;
+            --box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --transition-speed: 0.3s;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 0;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            overflow: hidden;
+        }
+        
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--primary-color);
+            color: white;
+            margin-bottom: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: white;
+            display: flex;
+            align-items: center;
+        }
+        
+        header h1 i {
+            margin-right: 10px;
+        }
+        
+        header .header-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .editor-main {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+        
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: #fff;
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar .project-selector {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .sidebar .project-selector label {
+            color: #ecf0f1;
+        }
+        
+        .sidebar .project-selector select {
+            width: 100%;
+            padding: 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            background-color: white;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .sidebar .project-selector select option {
+            background-color: white;
+            color: #333;
+            padding: 8px;
+        }
+        
+        .sidebar .nav-tabs {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .sidebar .nav-tabs li {
+            margin-bottom: 8px;
+        }
+        
+        .sidebar .nav-tabs a {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            color: rgba(255,255,255,0.7);
+            text-decoration: none;
+            border-radius: var(--border-radius);
+            transition: all var(--transition-speed);
+        }
+        
+        .sidebar .nav-tabs a:hover {
+            background-color: rgba(255,255,255,0.1);
+            color: #fff;
+        }
+        
+        .sidebar .nav-tabs a.active {
+            background-color: var(--primary-color);
+            color: #fff;
+        }
+        
+        .sidebar .nav-tabs a i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .sidebar .status-indicator {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .sidebar .status-indicator .indicator {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .sidebar .status-indicator .indicator i {
+            margin-right: 8px;
+        }
+        
+        .sidebar .status-indicator .indicator.saving i {
+            color: var(--warning-color);
+        }
+        
+        .sidebar .status-indicator .indicator.saved i {
+            color: var(--success-color);
+        }
+        
+        .content-area {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+            background-color: #f8f9fa;
+        }
+        
+        h1, h2, h3, h4 {
+            color: var(--secondary-color);
+            margin-top: 0;
+        }
+        
+        h2 {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+        
+        h3 {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #fff;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border-top: 3px solid var(--primary-color);
+            transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        
+        .section:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+        
+        .section-header h2 {
+            margin: 0;
+        }
+        
+        .section-content {
+            display: block;
+        }
+        
+        .form-row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -10px 15px;
+        }
+        
+        .form-col {
+            flex: 1;
+            padding: 0 10px;
+            min-width: 200px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 14px;
+            transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        input[type="color"] {
+            height: 40px;
+            padding: 2px;
+        }
+        
+        input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+        
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            transition: background-color var(--transition-speed), transform var(--transition-speed);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        button i {
+            margin-right: 8px;
+        }
+        
+        button:hover {
+            background-color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+        
+        button.secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        button.secondary:hover {
+            background-color: #1a252f;
+        }
+        
+        button.success {
+            background-color: var(--success-color);
+        }
+        
+        button.success:hover {
+            background-color: #27ae60;
+        }
+        
+        button.warning {
+            background-color: var(--warning-color);
+        }
+        
+        button.warning:hover {
+            background-color: #e67e22;
+        }
+        
+        button.error {
+            background-color: var(--error-color);
+        }
+        
+        button.error:hover {
+            background-color: #c0392b;
+        }
+        
+        .status {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: var(--border-radius);
+            display: flex;
+            align-items: center;
+            transition: opacity 0.5s ease;
+        }
+        
+        .status i {
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .status.warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .status.fade-out {
+            opacity: 0;
+        }
+        
+        .tabs {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+        
+        .tab {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            margin-bottom: 5px;
+            transition: all var(--transition-speed);
+            display: flex;
+            align-items: center;
+            border-radius: 0 var(--border-radius) var(--border-radius) 0;
+        }
+        
+        .tab i {
+            margin-right: 10px;
+            width: 20px;
+            text-align: center;
+        }
+        
+        .tab:hover {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left-color: rgba(52, 152, 219, 0.5);
+        }
+        
+        .tab.active {
+            background-color: rgba(52, 152, 219, 0.2);
+            border-left-color: var(--primary-color);
+            font-weight: 500;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .collapse-toggle {
+            background: none;
+            border: none;
+            color: var(--secondary-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .collapse-toggle:hover {
+            background: var(--light-color);
+            border-radius: 50%;
+        }
+        
+        .collapsed .section-content {
+            display: none;
+        }
+        
+        .project-selector {
+            margin-bottom: 20px;
+        }
+        
+        #project-select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-family: inherit;
+            font-size: 14px;
+            margin-bottom: 10px;
+            background-color: white;
+        }
+        
+        .debug-info {
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            display: none;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .debug-panel {
+            margin-top: 20px;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+        
+        .debug-panel h3 {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+        
+        .debug-panel h3 i {
+            margin-right: 8px;
+        }
+        
+        .auto-save-indicator {
+            display: inline-flex;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+            margin-left: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .auto-save-indicator.visible {
+            opacity: 1;
+        }
+        
+        .auto-save-indicator i {
+            margin-right: 5px;
+            color: var(--success-color);
+        }
+        
+        .style-preview {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            transition: all var(--transition-speed);
+        }
+        
+        .style-preview h3 {
+            margin-top: 0;
+        }
+        
+        .style-preview-content {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .preview-item {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: white;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .preview-heading {
+            margin-top: 0;
+            margin-bottom: 10px;
+        }
+        
+        .preview-text {
+            margin: 0;
+        }
+        
+        .button-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-main {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .tabs {
+                flex-direction: row;
+                flex-wrap: wrap;
+                border-bottom: 1px solid var(--border-color);
+            }
+            
+            .tab {
+                border-left: none;
+                border-bottom: 3px solid transparent;
+                border-radius: var(--border-radius) var(--border-radius) 0 0;
+            }
+            
+            .tab.active {
+                border-bottom-color: var(--primary-color);
+                border-left-color: transparent;
+            }
+        }
+        
+        /* Style Preview Section */
+        .style-preview {
+            background: white;
+            border-radius: var(--border-radius);
+            padding: 20px;
+            margin-top: 20px;
+            box-shadow: var(--box-shadow);
+        }
+        
+        .style-preview h3 {
+            margin-top: 0;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .style-preview h3 i {
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+        
+        .preview-item {
+            margin-bottom: 15px;
+        }
+        
+        .preview-item h4 {
+            margin-bottom: 5px;
+            font-size: 1rem;
+            color: var(--secondary-color);
+        }
+        
+        .preview-sample {
+            padding: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+        }
+        
+        /* Auto-save indicator */
+        .auto-save-indicator {
+            display: none;
+            align-items: center;
+            padding: 5px 10px;
+            background-color: rgba(243, 156, 18, 0.2);
+            color: var(--warning-color);
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            animation: pulse 1.5s infinite;
+        }
+        
+        .auto-save-indicator i {
+            margin-right: 5px;
+            animation: spin 1.5s linear infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .save-button {
+            display: flex;
+            align-items: center;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        .save-button:hover {
+            background-color: #27ae60;
+        }
+        
+        .save-button i {
+            margin-right: 8px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            color: rgba(255,255,255,0.8);
+            font-size: 0.9rem;
+            margin-top: 10px;
+        }
+        
+        .user-info i {
+            margin-right: 8px;
+            color: var(--success-color);
+        }
+        
+        .sign-out-btn {
+            background: none;
+            border: none;
+            color: rgba(255,255,255,0.7);
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        
+        .sign-out-btn:hover {
+            color: white;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-edit"></i> SelfCast Content Editor <span style="font-size: 0.7em; background: #2980b9; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">MongoDB</span></h1>
+            <div class="header-actions">
+                <button id="view-site-button" class="secondary"><i class="fas fa-external-link-alt"></i> View Site</button>
+                <button id="sign-out-button" class="danger"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
+            </div>
+        </header>
+        
+        <div class="editor-main">
+            <div class="sidebar">
+                <div class="project-selector">
+                    <label for="project-select">Select Project:</label>
+                    <select id="project-select">
+                        <option value="">Loading projects...</option>
+                    </select>
+                </div>
+                
+                <ul class="nav-tabs">
+                    <li><a href="#main-content" class="active" onclick="activateTab('main-content')"><i class="fas fa-home"></i>Main Content</a></li>
+                    <li><a href="#blog-posts" onclick="activateTab('blog-posts')"><i class="fas fa-blog"></i>Blog Posts</a></li>
+                    <li><a href="#social-media" onclick="activateTab('social-media')"><i class="fas fa-share-alt"></i>Social Media</a></li>
+                    <li><a href="#styling" onclick="activateTab('styling')"><i class="fas fa-palette"></i>Styling</a></li>
+                    <li><a href="#quotes" onclick="activateTab('quotes')"><i class="fas fa-quote-right"></i>Quotes</a></li>
+                    <li><a href="#contact" onclick="activateTab('contact')"><i class="fas fa-envelope"></i>Contact</a></li>
+                    <li><a href="#misc" onclick="activateTab('misc')"><i class="fas fa-cog"></i>Miscellaneous</a></li>
+                </ul>
+                
+                <div class="status-indicator">
+                    <div class="user-info">
+                        <i class="fas fa-user-circle"></i>
+                        <span id="user-email">Loading...</span>
+                        <button id="sidebar-sign-out" class="sign-out-btn">Sign out</button>
+                    </div>
+                    <div class="indicator saved" id="save-indicator">
+                        <i class="fas fa-check-circle"></i>
+                        <span>All changes saved</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="content-area">
+                <div id="status" class="status info">
+                    <i class="fas fa-info-circle"></i>
+                    <span>Ready to load projects</span>
+                </div>
+                
+                <form id="contentForm">
+                    <!-- Main Content Tab -->
+                    <div class="tab-content active" id="main-content">
+                        <!-- Main Content Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Main Content</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="rendered_title">Site Title</label>
+                                    <input type="text" id="rendered_title" name="rendered_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rendered_subtitle">Subtitle</label>
+                                    <input type="text" id="rendered_subtitle" name="rendered_subtitle">
+                                </div>
+                                <div class="form-group">
+                                    <label for="rendered_bio_html">Bio Content (HTML)</label>
+                                    <textarea id="rendered_bio_html" name="rendered_bio_html"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Profile Image Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Profile Image</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="profile_image_url">Profile Image URL</label>
+                                    <input type="text" id="profile_image_url" name="profile_image_url" placeholder="Enter direct URL to your profile image">
+                                    <p class="help-text">Enter a direct link to your profile image (JPG, PNG, or WebP format)</p>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label>Upload New Image</label>
+                                    <div class="image-upload-container">
+                                        <div id="profile-image-preview" class="image-preview">
+                                            <img id="profile-preview" src="" alt="Profile preview" style="max-width: 100%; max-height: 200px; display: none;">
+                                            <div id="profile-placeholder" class="placeholder">No image selected</div>
+                                        </div>
+                                        <input type="file" id="profile_image_upload" accept="image/*" style="display: none;">
+                                        <div class="button-group">
+                                            <button type="button" class="secondary" onclick="document.getElementById('profile_image_upload').click()">Select Image</button>
+                                            <button type="button" class="secondary" id="upload-profile-image">Upload Image</button>
+                                        </div>
+                                    </div>
+                                    <p class="help-text">Recommended size: 400x400 pixels. Maximum file size: 2MB</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Blog Posts Tab -->
+                    <div class="tab-content" id="blog-posts">
+                        <!-- Blog Post 1 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Blog Post 1</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="blog_1_title">Title</label>
+                                    <input type="text" id="blog_1_title" name="blog_1_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="blog_1">Content</label>
+                                    <textarea id="blog_1" name="blog_1"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Blog Post 2 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Blog Post 2</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="blog_2_title">Title</label>
+                                    <input type="text" id="blog_2_title" name="blog_2_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="blog_2">Content</label>
+                                    <textarea id="blog_2" name="blog_2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Blog Post 3 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Blog Post 3</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="blog_3_title">Title</label>
+                                    <input type="text" id="blog_3_title" name="blog_3_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="blog_3">Content</label>
+                                    <textarea id="blog_3" name="blog_3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Blog Post 4 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Blog Post 4</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="blog_4_title">Title</label>
+                                    <input type="text" id="blog_4_title" name="blog_4_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="blog_4">Content</label>
+                                    <textarea id="blog_4" name="blog_4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Social Media Tab -->
+                    <div class="tab-content" id="social-media">
+                        <!-- Facebook Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Facebook</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="facebook_title_1">Facebook Post 1 Title</label>
+                                    <input type="text" id="facebook_title_1" name="facebook_title_1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="facebook_post_1">Facebook Post 1 Content</label>
+                                    <textarea id="facebook_post_1" name="facebook_post_1"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="facebook_title_2">Facebook Post 2 Title</label>
+                                    <input type="text" id="facebook_title_2" name="facebook_title_2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="facebook_post_2">Facebook Post 2 Content</label>
+                                    <textarea id="facebook_post_2" name="facebook_post_2"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="facebook_title_3">Facebook Post 3 Title</label>
+                                    <input type="text" id="facebook_title_3" name="facebook_title_3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="facebook_post_3">Facebook Post 3 Content</label>
+                                    <textarea id="facebook_post_3" name="facebook_post_3"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="facebook_title_4">Facebook Post 4 Title</label>
+                                    <input type="text" id="facebook_title_4" name="facebook_title_4">
+                                </div>
+                                <div class="form-group">
+                                    <label for="facebook_post_4">Facebook Post 4 Content</label>
+                                    <textarea id="facebook_post_4" name="facebook_post_4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Twitter Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Twitter</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="twitter_title_1">Twitter Post 1 Title</label>
+                                    <input type="text" id="twitter_title_1" name="twitter_title_1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="twitter_post_1">Twitter Post 1 Content</label>
+                                    <textarea id="twitter_post_1" name="twitter_post_1"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="twitter_title_2">Twitter Post 2 Title</label>
+                                    <input type="text" id="twitter_title_2" name="twitter_title_2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="twitter_post_2">Twitter Post 2 Content</label>
+                                    <textarea id="twitter_post_2" name="twitter_post_2"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="twitter_title_3">Twitter Post 3 Title</label>
+                                    <input type="text" id="twitter_title_3" name="twitter_title_3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="twitter_post_3">Twitter Post 3 Content</label>
+                                    <textarea id="twitter_post_3" name="twitter_post_3"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="twitter_title_4">Twitter Post 4 Title</label>
+                                    <input type="text" id="twitter_title_4" name="twitter_title_4">
+                                </div>
+                                <div class="form-group">
+                                    <label for="twitter_post_4">Twitter Post 4 Content</label>
+                                    <textarea id="twitter_post_4" name="twitter_post_4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Instagram Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Instagram</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="instagram_title_1">Instagram Post 1 Title</label>
+                                    <input type="text" id="instagram_title_1" name="instagram_title_1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="instagram_post_1">Instagram Post 1 Content</label>
+                                    <textarea id="instagram_post_1" name="instagram_post_1"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="instagram_title_2">Instagram Post 2 Title</label>
+                                    <input type="text" id="instagram_title_2" name="instagram_title_2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="instagram_post_2">Instagram Post 2 Content</label>
+                                    <textarea id="instagram_post_2" name="instagram_post_2"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="instagram_title_3">Instagram Post 3 Title</label>
+                                    <input type="text" id="instagram_title_3" name="instagram_title_3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="instagram_post_3">Instagram Post 3 Content</label>
+                                    <textarea id="instagram_post_3" name="instagram_post_3"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="instagram_title_4">Instagram Post 4 Title</label>
+                                    <input type="text" id="instagram_title_4" name="instagram_title_4">
+                                </div>
+                                <div class="form-group">
+                                    <label for="instagram_post_4">Instagram Post 4 Content</label>
+                                    <textarea id="instagram_post_4" name="instagram_post_4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- LinkedIn Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>LinkedIn</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="linkedin_title_1">LinkedIn Post 1 Title</label>
+                                    <input type="text" id="linkedin_title_1" name="linkedin_title_1">
+                                </div>
+                                <div class="form-group">
+                                    <label for="linkedin_post_1">LinkedIn Post 1 Content</label>
+                                    <textarea id="linkedin_post_1" name="linkedin_post_1"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="linkedin_title_2">LinkedIn Post 2 Title</label>
+                                    <input type="text" id="linkedin_title_2" name="linkedin_title_2">
+                                </div>
+                                <div class="form-group">
+                                    <label for="linkedin_post_2">LinkedIn Post 2 Content</label>
+                                    <textarea id="linkedin_post_2" name="linkedin_post_2"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="linkedin_title_3">LinkedIn Post 3 Title</label>
+                                    <input type="text" id="linkedin_title_3" name="linkedin_title_3">
+                                </div>
+                                <div class="form-group">
+                                    <label for="linkedin_post_3">LinkedIn Post 3 Content</label>
+                                    <textarea id="linkedin_post_3" name="linkedin_post_3"></textarea>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="linkedin_title_4">LinkedIn Post 4 Title</label>
+                                    <input type="text" id="linkedin_title_4" name="linkedin_title_4">
+                                </div>
+                                <div class="form-group">
+                                    <label for="linkedin_post_4">LinkedIn Post 4 Content</label>
+                                    <textarea id="linkedin_post_4" name="linkedin_post_4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Styling Tab -->
+                    <div class="tab-content" id="styling">
+                        <!-- Colors Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Colors</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="primary_color">Primary Color:</label>
+                                            <input type="color" id="primary_color" name="primary_color" value="#3498db" oninput="updateStylePreview()">
+                                        </div>
+                                    </div>
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="secondary_color">Secondary Color:</label>
+                                            <input type="color" id="secondary_color" name="secondary_color" value="#2c3e50" oninput="updateStylePreview()">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="accent_color">Accent Color:</label>
+                                            <input type="color" id="accent_color" name="accent_color" value="#e74c3c" oninput="updateStylePreview()">
+                                        </div>
+                                    </div>
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="text_color">Text Color:</label>
+                                            <input type="color" id="text_color" name="text_color" value="#333333" oninput="updateStylePreview()">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="background_color">Background Color:</label>
+                                            <input type="color" id="background_color" name="background_color" value="#f5f5f5" oninput="updateStylePreview()">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fonts Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Fonts</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="heading_font">Heading Font:</label>
+                                            <select id="heading_font" name="heading_font" oninput="updateStylePreview()">
+                                                <option value="Arial, sans-serif">Arial</option>
+                                                <option value="Helvetica, sans-serif">Helvetica</option>
+                                                <option value="Georgia, serif">Georgia</option>
+                                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                                <option value="Verdana, sans-serif">Verdana</option>
+                                                <option value="'Courier New', monospace">Courier New</option>
+                                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                                <option value="'Roboto', sans-serif">Roboto</option>
+                                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                                <option value="'Lato', sans-serif">Lato</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="body_font">Body Font:</label>
+                                            <select id="body_font" name="body_font" oninput="updateStylePreview()">
+                                                <option value="Arial, sans-serif">Arial</option>
+                                                <option value="Helvetica, sans-serif">Helvetica</option>
+                                                <option value="Georgia, serif">Georgia</option>
+                                                <option value="'Times New Roman', serif">Times New Roman</option>
+                                                <option value="Verdana, sans-serif">Verdana</option>
+                                                <option value="'Courier New', monospace">Courier New</option>
+                                                <option value="'Open Sans', sans-serif">Open Sans</option>
+                                                <option value="'Roboto', sans-serif">Roboto</option>
+                                                <option value="'Montserrat', sans-serif">Montserrat</option>
+                                                <option value="'Lato', sans-serif">Lato</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Style Preview Section -->
+                        <div class="style-preview">
+                            <h3><i class="fas fa-eye"></i> Live Style Preview</h3>
+                            
+                            <div class="preview-item">
+                                <h4>Heading Styles</h4>
+                                <div class="preview-sample" id="heading-preview">
+                                    <h1 style="margin-top: 0;">Heading 1</h1>
+                                    <h2>Heading 2</h2>
+                                    <h3>Heading 3</h3>
+                                </div>
+                            </div>
+                            
+                            <div class="preview-item">
+                                <h4>Button Styles</h4>
+                                <div class="preview-sample" id="button-preview">
+                                    <button style="background-color: var(--primary-color); color: white; border: none; padding: 10px 20px; border-radius: 4px; margin-right: 10px;">Primary Button</button>
+                                    <button style="background-color: var(--secondary-color); color: white; border: none; padding: 10px 20px; border-radius: 4px; margin-right: 10px;">Secondary Button</button>
+                                    <button style="background-color: var(--accent-color); color: white; border: none; padding: 10px 20px; border-radius: 4px;">Accent Button</button>
+                                </div>
+                            </div>
+                            
+                            <div class="preview-item">
+                                <h4>Text Styles</h4>
+                                <div class="preview-sample" id="text-preview">
+                                    <p>This is a paragraph of text that demonstrates how your body text will look on your website. The font family, size, and color can all be customized to match your brand's style.</p>
+                                    <p>Here's a <a href="#" style="color: var(--primary-color);">hyperlink</a> styled with your primary color.</p>
+                                    <p><strong>This text is bold</strong> and <em>this text is italicized</em>.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="button" class="save-button" onclick="saveContent(currentProjectId, collectFormData())">
+                            <i class="fas fa-save"></i> Save Style Changes
+                        </button>
+                    </div>
+                    
+                    <!-- Quotes Tab -->
+                    <div class="tab-content" id="quotes">
+                        <!-- Quote 1 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Quote 1</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="quote_1">Quote Text</label>
+                                    <textarea id="quote_1" name="quote_1"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quote 2 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Quote 2</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="quote_2">Quote Text</label>
+                                    <textarea id="quote_2" name="quote_2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Quote 3 Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Quote 3</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="quote_3">Quote Text</label>
+                                    <textarea id="quote_3" name="quote_3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Contact Tab -->
+                    <div class="tab-content" id="contact">
+                        <!-- Contact Information Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Contact Information</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="contact_email">Email Address</label>
+                                    <input type="email" id="contact_email" name="contact_email">
+                                </div>
+                                <div class="form-group">
+                                    <label for="contact_phone">Phone Number</label>
+                                    <input type="tel" id="contact_phone" name="contact_phone">
+                                </div>
+                                <div class="form-group">
+                                    <label for="contact_address">Address</label>
+                                    <textarea id="contact_address" name="contact_address" rows="3"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="contact_hours">Business Hours</label>
+                                    <textarea id="contact_hours" name="contact_hours" rows="3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contact Form Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Contact Form Settings</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="contact_form_title">Form Title</label>
+                                    <input type="text" id="contact_form_title" name="contact_form_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="contact_form_subtitle">Form Subtitle</label>
+                                    <input type="text" id="contact_form_subtitle" name="contact_form_subtitle">
+                                </div>
+                                <div class="form-group">
+                                    <label for="contact_form_success">Success Message</label>
+                                    <textarea id="contact_form_success" name="contact_form_success" rows="2"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Miscellaneous Tab -->
+                    <div class="tab-content" id="misc">
+                        <!-- Onboarding Information Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Onboarding Information</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="onboarding_title">Onboarding Title</label>
+                                    <input type="text" id="onboarding_title" name="onboarding_title">
+                                </div>
+                                <div class="form-group">
+                                    <label for="onboarding_text">Onboarding Text</label>
+                                    <textarea id="onboarding_text" name="onboarding_text" rows="4"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Constants
+        const SUPABASE_URL = window.SUPABASE_CONFIG.url;
+        const SUPABASE_KEY = window.SUPABASE_CONFIG.key;
+        
+        // Global variables
+        let currentProjectId = null;
+        let autoSaveTimer = null;
+        let debugMode = false;
+        let currentUser = null;
+        
+        // Elements
+        const statusElement = document.getElementById('status');
+        const projectSelect = document.getElementById('project-select');
+        const viewSiteButton = document.getElementById('view-site-button');
+        const saveButton = document.getElementById('save-button');
+        
+        // Debug toggle
+        function toggleDebug() {
+            debugMode = !debugMode;
+            log(`Debug mode ${debugMode ? 'enabled' : 'disabled'}`);
+        }
+        
+        // Debug logging
+        function log(message, data) {
+            const timestamp = new Date().toISOString().substring(11, 19);
+            const formattedMessage = typeof data !== 'undefined' 
+                ? `[${timestamp}] ${message}: ${JSON.stringify(data, null, 2)}`
+                : `[${timestamp}] ${message}`;
+            
+            console.log(message, data);
+        }
+        
+        // Check authentication status
+        async function checkAuth() {
+            try {
+                const { data, error } = await window.SupabaseAuth.getSession();
+                
+                if (error) {
+                    log('Authentication error:', error);
+                    redirectToLogin();
+                    return false;
+                }
+                
+                if (!data.session) {
+                    log('No active session found');
+                    redirectToLogin();
+                    return false;
+                }
+                
+                // Get user details
+                const { data: userData } = await window.SupabaseAuth.getUser();
+                currentUser = userData.user;
+                
+                // Update UI with user info
+                updateUserInfo(currentUser);
+                
+                log('User authenticated:', currentUser);
+                return true;
+            } catch (err) {
+                log('Error checking authentication:', err);
+                redirectToLogin();
+                return false;
+            }
+        }
+        
+        // Redirect to login page
+        function redirectToLogin() {
+            window.location.href = 'login.html';
+        }
+        
+        // Update user info in the UI
+        function updateUserInfo(user) {
+            const userEmailElement = document.getElementById('user-email');
+            if (userEmailElement && user) {
+                userEmailElement.textContent = user.email;
+            }
+        }
+        
+        // Sign out
+        function signOut() {
+            log('Redirecting to logout page...');
+            window.location.href = 'logout.html';
+        }
+        
+        // Load all projects without user filtering
+        async function loadAllProjects() {
+            try {
+                showStatus('Loading projects...', 'info');
+                
+                // Get projects for current user
+                const { data: projects, error } = await window.SupabaseAuth.getUserProjects();
+                
+                if (error) {
+                    log('Error loading projects:', error);
+                    showStatus('Error loading projects: ' + error.message, 'error');
+                    return;
+                }
+                
+                if (!projects || projects.length === 0) {
+                    log('No projects found for current user');
+                    showStatus('No projects found for your account', 'warning');
+                    return;
+                }
+                
+                // Sort projects alphabetically
+                const sortedProjects = projects.sort((a, b) => {
+                    return a.project_id.localeCompare(b.project_id);
+                });
+                
+                log('Projects loaded:', sortedProjects);
+                
+                // Clear existing options
+                projectSelect.innerHTML = '';
+                
+                // Add default option
+                const defaultOption = document.createElement('option');
+                defaultOption.value = '';
+                defaultOption.textContent = '-- Select a project --';
+                projectSelect.appendChild(defaultOption);
+                
+                // Add options for each project
+                sortedProjects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.project_id;
+                    option.textContent = project.project_id;
+                    projectSelect.appendChild(option);
+                });
+                
+                showStatus(`Loaded ${sortedProjects.length} projects`, 'success');
+                
+                // Check for project_id in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const projectIdParam = urlParams.get('project_id');
+                
+                if (projectIdParam) {
+                    log('Project ID found in URL', projectIdParam);
+                    // Wait for projects to load before selecting
+                    setTimeout(() => {
+                        const projectSelect = document.getElementById('project-select');
+                        if (projectSelect) {
+                            projectSelect.value = projectIdParam;
+                            if (projectSelect.value === projectIdParam) {
+                                loadContent(projectIdParam);
+                            }
+                        }
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                log('Error in loadAllProjects:', error);
+                showStatus('Error loading projects', 'error');
+            }
+        }
+        
+        // Load content for a project
+        async function loadContent(projectId) {
+            try {
+                if (!projectId) {
+                    showStatus('No project selected', 'error');
+                    return;
+                }
+                
+                currentProjectId = projectId;
+                
+                // Update URL without redirect
+                const newUrl = new URL(window.location.href);
+                newUrl.searchParams.set('project_id', projectId);
+                window.history.pushState({}, '', newUrl);
+                
+                showStatus(`Loading content for project: ${projectId}...`, 'info');
+                log('Loading content for project', projectId);
+                
+                // Use direct fetch request instead of Supabase client
+                // Specifically request key and value columns
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content?project_id=eq.${encodeURIComponent(projectId)}&select=key,value`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to load content: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data || data.length === 0) {
+                    showStatus(`No content found for project: ${projectId}`, 'error');
+                    log('No content found for project', projectId);
+                    return;
+                }
+                
+                // Process content data
+                const content = {};
+                data.forEach(item => {
+                    content[item.key] = item.value;
+                });
+                
+                // Debug output to see what keys were found
+                log('Content keys found:', Object.keys(content));
+                
+                // Populate form fields
+                populateFormFields(content);
+                
+                // Enable view site button
+                viewSiteButton.style.display = 'inline-block';
+                
+                showStatus(`Loaded ${data.length} content items for project: ${projectId}`, 'success');
+                log('Content loaded successfully', data.length);
+                
+                // Update style preview if on styling tab
+                const stylePreview = document.getElementById('style-preview');
+                const stylingTab = document.querySelector('.tab[data-tab="styling"]');
+                const headingFont = document.getElementById('heading_font');
+                
+                if (stylePreview && stylingTab && stylingTab.classList.contains('active') && headingFont) {
+                    const updateEvent = new Event('change');
+                    headingFont.dispatchEvent(updateEvent);
+                }
+                
+                // Update profile image preview if exists
+                updateProfileImagePreview(content);
+                
+            } catch (error) {
+                console.error('Error loading content:', error);
+                log('Error loading content', error.message);
+                showStatus(`Error loading content: ${error.message}`, 'error');
+            }
+        }
+        
+        // Populate form fields with content
+        function populateFormFields(content) {
+            log('Populating form fields with content');
+            
+            // Debug: Count of form elements found
+            const formElements = document.querySelectorAll('#contentForm input, #contentForm textarea, #contentForm select');
+            log(`Found ${formElements.length} form elements to populate`);
+            
+            // Track matches and misses for debugging
+            let matchCount = 0;
+            let missCount = 0;
+            let matchedFields = [];
+            let missingFields = [];
+            
+            // Loop through each form element
+            formElements.forEach(element => {
+                const fieldName = element.id || element.name;
+                
+                // Skip elements without an ID or name
+                if (!fieldName) return;
+                
+                // If content exists for this field, set the value
+                if (content.hasOwnProperty(fieldName)) {
+                    matchCount++;
+                    matchedFields.push(fieldName);
+                    
+                    if (element.type === 'checkbox') {
+                        element.checked = content[fieldName] === 'true' || content[fieldName] === true;
+                    } else if (element.type === 'color') {
+                        // Ensure color values have a # prefix
+                        let colorValue = content[fieldName];
+                        if (colorValue && !colorValue.startsWith('#') && colorValue.length === 6) {
+                            colorValue = '#' + colorValue;
+                        }
+                        element.value = colorValue || '';
+                    } else {
+                        element.value = content[fieldName] || '';
+                    }
+                    
+                    // Trigger change event for elements that need it (like select dropdowns)
+                    if (element.tagName === 'SELECT') {
+                        const event = new Event('change');
+                        element.dispatchEvent(event);
+                    }
+                } else {
+                    missCount++;
+                    missingFields.push(fieldName);
+                }
+            });
+            
+            // Log match statistics
+            log(`Field mapping stats: ${matchCount} matches, ${missCount} misses`);
+            log('Matched fields:', matchedFields);
+            log('Missing fields:', missingFields);
+            
+            // Check for any content keys that don't have corresponding form fields
+            const contentKeys = Object.keys(content);
+            const formFieldIds = Array.from(formElements).map(el => el.id || el.name).filter(id => id);
+            const unmappedKeys = contentKeys.filter(key => !formFieldIds.includes(key));
+            
+            log(`Found ${unmappedKeys.length} content keys with no matching form fields`);
+            if (unmappedKeys.length > 0) {
+                log('Unmapped content keys:', unmappedKeys);
+            }
+            
+            // Force update of any special fields that might need it
+            updateSpecialFields(content);
+            
+            log('Form fields populated successfully');
+        }
+        
+        // Update any special fields that might need extra handling
+        function updateSpecialFields(content) {
+            // Force update of style preview if we're on the styling tab
+            if (document.querySelector('.tab[data-tab="styling"]')?.classList.contains('active')) {
+                updateStylePreview();
+            }
+            
+            // Special handling for bio content which might be in different fields
+            if (content.rendered_bio_html) {
+                const bioField = document.getElementById('rendered_bio_html');
+                if (bioField) {
+                    bioField.value = content.rendered_bio_html;
+                }
+            }
+            
+            // Special handling for color fields to ensure they have # prefix
+            ['primary_color', 'secondary_color', 'accent_color', 'text_color', 'background_color', 'link_color'].forEach(colorField => {
+                if (content[colorField]) {
+                    const field = document.getElementById(colorField);
+                    if (field) {
+                        let colorValue = content[colorField];
+                        if (colorValue && !colorValue.startsWith('#') && colorValue.length === 6) {
+                            colorValue = '#' + colorValue;
+                        }
+                        field.value = colorValue;
+                    }
+                }
+            });
+            
+            // Handle blog post fields - map between different naming conventions
+            const blogMappings = [
+                { formField: 'blog_1_title', contentKey: 'blog_post_1_title' },
+                { formField: 'blog_1', contentKey: 'blog_post_1_description' },
+                { formField: 'blog_2_title', contentKey: 'blog_post_2_title' },
+                { formField: 'blog_2', contentKey: 'blog_post_2_description' },
+                { formField: 'blog_3_title', contentKey: 'blog_post_3_title' },
+                { formField: 'blog_3', contentKey: 'blog_post_3_description' },
+                { formField: 'blog_4_title', contentKey: 'blog_post_4_title' },
+                { formField: 'blog_4', contentKey: 'blog_post_4_description' }
+            ];
+            
+            // Handle quote fields - map between different naming conventions
+            const quoteMappings = [
+                { formField: 'quote_1', contentKey: 'quote_1_text' },
+                { formField: 'quote_2', contentKey: 'quote_2_text' },
+                { formField: 'quote_3', contentKey: 'quote_3_text' }
+            ];
+            
+            // Apply all mappings
+            const allMappings = [...blogMappings, ...quoteMappings];
+            let mappedCount = 0;
+            
+            allMappings.forEach(mapping => {
+                const { formField, contentKey } = mapping;
+                if (content[contentKey]) {
+                    const field = document.getElementById(formField);
+                    if (field) {
+                        field.value = content[contentKey];
+                        mappedCount++;
+                    }
+                }
+            });
+            
+            log(`Applied ${mappedCount} special field mappings`);
+            
+            // Ensure style fields are populated
+            const styleFields = {
+                'primary_color': '#3498db',
+                'secondary_color': '#2c3e50',
+                'accent_color': '#e74c3c',
+                'text_color': '#333333',
+                'background_color': '#ffffff',
+                'heading_font': 'Arial, sans-serif',
+                'body_font': 'Arial, sans-serif'
+            };
+            
+            // Apply default style values if not present in content
+            Object.entries(styleFields).forEach(([field, defaultValue]) => {
+                const element = document.getElementById(field);
+                if (element && (!element.value || element.value === '')) {
+                    element.value = content[field] || defaultValue;
+                    
+                    // Trigger change event for the styling fields
+                    const event = new Event('change');
+                    element.dispatchEvent(event);
+                }
+            });
+            
+            // Map contact fields if they exist
+            const contactMappings = [
+                { formField: 'contact_email', contentKey: 'contact_email' },
+                { formField: 'contact_phone', contentKey: 'contact_phone' },
+                { formField: 'contact_address', contentKey: 'contact_address' },
+                { formField: 'contact_hours', contentKey: 'contact_hours' },
+                { formField: 'contact_form_title', contentKey: 'contact_form_title' },
+                { formField: 'contact_form_subtitle', contentKey: 'contact_form_subtitle' },
+                { formField: 'contact_form_success', contentKey: 'contact_form_success' }
+            ];
+            
+            contactMappings.forEach(mapping => {
+                const { formField, contentKey } = mapping;
+                if (content[contentKey]) {
+                    const field = document.getElementById(formField);
+                    if (field) {
+                        field.value = content[contentKey];
+                    }
+                }
+            });
+            
+            // Map old social media fields to new numbered format fields
+            mapSocialMediaFields(content);
+            
+            // Force display of all form elements
+            ensureFormElementsVisible();
+        }
+        
+        // Map old social media fields to new numbered format
+        function mapSocialMediaFields(content) {
+            // Platforms to process
+            const platforms = ['facebook', 'twitter', 'instagram', 'linkedin'];
+            
+            platforms.forEach(platform => {
+                // Check if we have the old format
+                if (content[`${platform}_post`]) {
+                    // Map to first entry of the new format
+                    const postField = document.getElementById(`${platform}_post_1`);
+                    if (postField) {
+                        postField.value = content[`${platform}_post`];
+                        log(`Mapped ${platform}_post to ${platform}_post_1`);
+                    }
+                }
+                
+                // Map old title if it exists
+                if (content[`${platform}_title`]) {
+                    const titleField = document.getElementById(`${platform}_title_1`);
+                    if (titleField) {
+                        titleField.value = content[`${platform}_title`];
+                        log(`Mapped ${platform}_title to ${platform}_title_1`);
+                    }
+                }
+                
+                // Map URLs
+                if (content[`${platform}_url`]) {
+                    const urlField = document.getElementById(`${platform}_url`);
+                    if (urlField) {
+                        urlField.value = content[`${platform}_url`];
+                    }
+                }
+            });
+        }
+        
+        // Make sure all form elements are visible
+        function ensureFormElementsVisible() {
+            // Make sure all tab content sections are visible
+            document.querySelectorAll('.tab-content').forEach(tabContent => {
+                // Make sure the element is visible
+                tabContent.style.display = 'block';
+                
+                // Make sure all sections within the tab are visible
+                tabContent.querySelectorAll('.section').forEach(section => {
+                    section.style.display = 'block';
+                    
+                    // Make sure the section content is visible
+                    const sectionContent = section.querySelector('.section-content');
+                    if (sectionContent) {
+                        sectionContent.style.display = 'block';
+                    }
+                });
+            });
+            
+            // Make sure the first tab is active
+            const firstTab = document.querySelector('.tab-content');
+            if (firstTab) {
+                firstTab.classList.add('active');
+            }
+            
+            // Log visibility status
+            log('Form visibility ensured');
+        }
+        
+        // Show status message
+        function showStatus(message, type = 'info') {
+            if (!statusElement) return;
+            
+            // Clear existing classes
+            statusElement.className = 'status';
+            statusElement.classList.add(type);
+            
+            // Add appropriate icon based on type
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-triangle';
+            if (type === 'warning') icon = 'exclamation-circle';
+            
+            // Set content with icon
+            statusElement.innerHTML = `<i class="fas fa-${icon}"></i><span>${message}</span>`;
+            
+            // Show the status
+            statusElement.style.opacity = '1';
+            statusElement.style.display = 'flex';
+            
+            // Auto-hide success and info messages after 5 seconds
+            if (type === 'success' || type === 'info') {
+                setTimeout(() => {
+                    statusElement.classList.add('fade-out');
+                    setTimeout(() => {
+                        statusElement.style.display = 'none';
+                        statusElement.classList.remove('fade-out');
+                    }, 500);
+                }, 5000);
+            }
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Project selection
+            if (projectSelect) {
+                projectSelect.addEventListener('change', function() {
+                    const selectedProject = this.value;
+                    if (selectedProject) {
+                        loadContent(selectedProject);
+                    }
+                });
+            }
+            
+            // View site button
+            if (viewSiteButton) {
+                viewSiteButton.addEventListener('click', function() {
+                    const selectedProjectId = projectSelect ? projectSelect.value : null;
+                    if (selectedProjectId) {
+                        window.open(`/index.html?project_id=${selectedProjectId}`, '_blank');
+                    } else {
+                        showStatus('Please select a project first', 'error');
+                    }
+                });
+            }
+            
+            // Save button
+            if (saveButton) {
+                saveButton.addEventListener('click', function() {
+                    if (currentProjectId) {
+                        const contentItems = collectFormData();
+                        saveContent(currentProjectId, contentItems);
+                    } else {
+                        showStatus('Please select a project first', 'error');
+                    }
+                });
+            }
+            
+            // Tab navigation
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    activateTab(tabId);
+                });
+            });
+            
+            // Sign out buttons
+            const signOutButton = document.getElementById('sign-out-button');
+            const sidebarSignOut = document.getElementById('sidebar-sign-out');
+            if (signOutButton) {
+                signOutButton.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    log('Sign out button clicked');
+                    window.location.href = 'logout.html';
+                });
+            }
+            if (sidebarSignOut) {
+                sidebarSignOut.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    log('Sidebar sign out button clicked');
+                    window.location.href = 'logout.html';
+                });
+            }
+        }
+        
+        // Initialize the editor
+        document.addEventListener('DOMContentLoaded', async function() {
+            log('Editor initializing...');
+            
+            // Load auth helper script
+            await loadScript('js/supabase-auth.js');
+            
+            // Check authentication first
+            const isAuthenticated = await checkAuth();
+            if (!isAuthenticated) return;
+            
+            // Continue with editor initialization
+            loadAllProjects();
+            setupEventListeners();
+            setupAutoSave();
+            setupProfileImageHandlers();
+            
+            // Initialize tabs - make sure main content tab is active
+            const mainContentTab = document.getElementById('main-content');
+            if (mainContentTab) {
+                // Make all other tabs inactive
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                
+                // Make main content tab active
+                mainContentTab.classList.add('active');
+                mainContentTab.style.display = 'block';
+                
+                // Make sure all sections within the tab are visible
+                mainContentTab.querySelectorAll('.section').forEach(section => {
+                    section.style.display = 'block';
+                });
+                
+                log('Main content tab activated');
+            }
+            
+            // Check for project_id in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const projectId = urlParams.get('project_id');
+            
+            if (projectId) {
+                log('Project ID found in URL: ' + projectId);
+                // Wait for projects to load before selecting
+                setTimeout(() => {
+                    const projectSelect = document.getElementById('project-select');
+                    if (projectSelect) {
+                        projectSelect.value = projectId;
+                        if (projectSelect.value === projectId) {
+                            loadContent(projectId);
+                        }
+                    }
+                }, 1000);
+            }
+            
+            // Initialize style preview
+            setTimeout(() => {
+                updateStylePreview();
+                
+                // Force display of all form elements
+                ensureFormElementsVisible();
+            }, 1500);
+        });
+        
+        // Helper function to load script dynamically
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                // Skip if already loaded
+                if (document.querySelector(`script[src="${src}"]`)) {
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = src;
+                script.onload = resolve;
+                script.onerror = reject;
+                document.head.appendChild(script);
+            });
+        }
+        
+        // Activate a tab
+        function activateTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            tabContents.forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            const activeTab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+            const activeContent = document.querySelector(`.tab-content#${tabId}`);
+            
+            if (activeTab && activeContent) {
+                activeTab.classList.add('active');
+                activeContent.classList.add('active');
+            }
+        }
+        
+        // Update style preview
+        function updateStylePreview() {
+            const stylePreview = document.getElementById('style-preview');
+            if (!stylePreview) return;
+            
+            // Get style values
+            const primaryColor = document.getElementById('primary_color')?.value || '#3498db';
+            const secondaryColor = document.getElementById('secondary_color')?.value || '#2c3e50';
+            const accentColor = document.getElementById('accent_color')?.value || '#e74c3c';
+            const textColor = document.getElementById('text_color')?.value || '#333333';
+            const backgroundColor = document.getElementById('background_color')?.value || '#f5f5f5';
+            
+            // Get font values
+            const headingFont = document.getElementById('heading_font')?.value || 'Arial, sans-serif';
+            const bodyFont = document.getElementById('body_font')?.value || 'Arial, sans-serif';
+            
+            // Update preview styles
+            stylePreview.style.setProperty('--primary-color', primaryColor);
+            stylePreview.style.setProperty('--secondary-color', secondaryColor);
+            stylePreview.style.setProperty('--accent-color', accentColor);
+            stylePreview.style.setProperty('--text-color', textColor);
+            stylePreview.style.setProperty('--background-color', backgroundColor);
+            stylePreview.style.setProperty('--heading-font', headingFont);
+            stylePreview.style.setProperty('--body-font', bodyFont);
+            
+            log('Style preview updated');
+        }
+        
+        // Collect form data
+        function collectFormData() {
+            const contentItems = [];
+            
+            document.querySelectorAll('input, textarea, select').forEach(field => {
+                if (field.id && field.id !== 'project-select' && field.name) {
+                    let value;
+                    
+                    if (field.type === 'checkbox') {
+                        value = field.checked ? 'true' : 'false';
+                    } else {
+                        value = field.value;
+                    }
+                    
+                    contentItems.push({
+                        key: field.name,
+                        value: value
+                    });
+                }
+            });
+            
+            return contentItems;
+        }
+        
+        // Validate form data
+        function validateFormData(contentItems) {
+            const errors = [];
+            
+            // Check for required fields
+            const requiredFields = ['rendered_title'];
+            
+            requiredFields.forEach(fieldName => {
+                const item = contentItems.find(item => item.key === fieldName);
+                
+                if (!item || !item.value.trim()) {
+                    errors.push(`${fieldName} is required`);
+                }
+            });
+            
+            return errors.length === 0; // Return true if no errors
+        }
+        
+        // Save content for a project
+        async function saveContent(projectId, contentItems, isAutoSave = false) {
+            try {
+                if (!projectId) {
+                    showStatus('No project selected', 'error');
+                    updateSaveIndicator('error');
+                    return;
+                }
+                
+                if (!validateFormData(contentItems)) {
+                    showStatus('Please fill in all required fields', 'error');
+                    updateSaveIndicator('error');
+                    return;
+                }
+                
+                // Show saving indicator
+                if (!isAutoSave) {
+                    showStatus('Saving content...', 'info');
+                }
+                updateSaveIndicator('saving');
+                
+                log('Saving content for project: ' + projectId, contentItems);
+                
+                // First, get existing content to determine updates vs inserts
+                const response = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content?project_id=eq.${encodeURIComponent(projectId)}&select=key`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch existing content: ${response.status} ${response.statusText}`);
+                }
+                
+                const existingData = await response.json();
+                
+                // Get unique existing keys
+                const existingKeys = new Set(existingData.map(item => item.key));
+                
+                // Separate items into updates and inserts
+                const updates = [];
+                const inserts = [];
+                
+                contentItems.forEach(item => {
+                    if (existingKeys.has(item.key)) {
+                        updates.push(item);
+                    } else {
+                        inserts.push({
+                            project_id: projectId,
+                            key: item.key,
+                            value: item.value
+                        });
+                    }
+                });
+                
+                log('Updates:', updates.length);
+                log('Inserts:', inserts.length);
+                
+                // Process updates
+                if (updates.length > 0) {
+                    for (const item of updates) {
+                        const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content?project_id=eq.${encodeURIComponent(projectId)}&key=eq.${encodeURIComponent(item.key)}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'apikey': SUPABASE_KEY,
+                                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                                'Content-Type': 'application/json',
+                                'Prefer': 'return=minimal'
+                            },
+                            body: JSON.stringify({ value: item.value })
+                        });
+                        
+                        if (!updateResponse.ok) {
+                            const errorMessage = `Failed to update item ${item.key}: ${updateResponse.status} ${updateResponse.statusText}`;
+                            log('Error updating item', { key: item.key, error: errorMessage });
+                            throw new Error(errorMessage);
+                        }
+                    }
+                }
+                
+                // Process inserts
+                if (inserts.length > 0) {
+                    const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content`, {
+                        method: 'POST',
+                        headers: {
+                            'apikey': SUPABASE_KEY,
+                            'Authorization': `Bearer ${SUPABASE_KEY}`,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify(inserts)
+                    });
+                    
+                    if (!insertResponse.ok) {
+                        const errorMessage = `Failed to insert items: ${insertResponse.status} ${insertResponse.statusText}`;
+                        log('Error inserting items', errorMessage);
+                        throw new Error(errorMessage);
+                    }
+                }
+                
+                log('Content saved successfully', { updates: updates.length, inserts: inserts.length });
+                if (!isAutoSave) {
+                    showStatus(`<i class="fas fa-check-circle"></i><span>Content saved successfully</span>`, 'success');
+                }
+                updateSaveIndicator('saved');
+                
+                // Update URL with project ID if not already there
+                if (!window.location.search.includes('project_id=')) {
+                    const newUrl = window.location.pathname + '?project_id=' + projectId;
+                    history.pushState({ projectId: projectId }, '', newUrl);
+                }
+                
+            } catch (error) {
+                console.error('Error saving content:', error);
+                log('Error saving content', error.message);
+                showStatus(`<i class="fas fa-exclamation-triangle"></i><span>Error saving content: ${error.message}</span>`, 'error');
+                updateSaveIndicator('error');
+            }
+        }
+        
+        // Update save indicator
+        function updateSaveIndicator(status) {
+            const indicator = document.getElementById('save-indicator');
+            if (!indicator) return;
+            
+            if (status === 'saving') {
+                indicator.className = 'indicator saving';
+                indicator.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i><span>Saving changes...</span>';
+            } else if (status === 'saved') {
+                indicator.className = 'indicator saved';
+                indicator.innerHTML = '<i class="fas fa-check-circle"></i><span>All changes saved</span>';
+            } else if (status === 'error') {
+                indicator.className = 'indicator error';
+                indicator.innerHTML = '<i class="fas fa-exclamation-circle"></i><span>Save failed</span>';
+            }
+        }
+        
+        // Functions for auto-save and UI updates
+        function setupAutoSave() {
+            // Set up event listeners for all form inputs
+            const formInputs = document.querySelectorAll('input, textarea, select');
+            formInputs.forEach(input => {
+                input.addEventListener('input', function() {
+                    resetAutoSaveTimer();
+                });
+            });
+            
+            log('Auto-save setup complete');
+        }
+        
+        function resetAutoSaveTimer() {
+            if (window.autoSaveTimer) {
+                clearTimeout(window.autoSaveTimer);
+            }
+            
+            window.autoSaveTimer = setTimeout(function() {
+                autoSave();
+            }, 2000); // Auto-save after 2 seconds of inactivity
+        }
+        
+        function autoSave() {
+            if (!currentProjectId) {
+                log('Auto-save skipped: No project selected');
+                return;
+            }
+            
+            const contentItems = collectFormData();
+            saveContent(currentProjectId, contentItems, true);
+        }
+        
+        function setupProfileImageHandlers() {
+            const profileImageInput = document.getElementById('profile_image_upload');
+            const profileImageUrlInput = document.getElementById('profile_image_url');
+            const profileImagePreviewImage = document.getElementById('profile-preview');
+            const profileImagePlaceholder = document.getElementById('profile-placeholder');
+            const uploadProfileImageButton = document.getElementById('upload-profile-image');
+            
+            // Skip if any elements are missing
+            if (!profileImageInput || !profileImageUrlInput || !profileImagePreviewImage || !profileImagePlaceholder || !uploadProfileImageButton) {
+                log('Profile image handlers not set up - missing elements');
+                return;
+            }
+            
+            // Function to update preview from URL input
+            profileImageUrlInput.addEventListener('input', function() {
+                const imageUrl = this.value.trim();
+                if (imageUrl) {
+                    // Update preview image
+                    profileImagePreviewImage.src = imageUrl;
+                    profileImagePreviewImage.style.display = 'block';
+                    profileImagePlaceholder.style.display = 'none';
+                    
+                    // Reset file input
+                    profileImageInput.value = '';
+                } else {
+                    // Hide preview if no URL
+                    profileImagePreviewImage.style.display = 'none';
+                    profileImagePlaceholder.style.display = 'block';
+                }
+            });
+            
+            // Preview selected file
+            profileImageInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // Update preview from selected file
+                        profileImagePreviewImage.src = e.target.result;
+                        profileImagePreviewImage.style.display = 'block';
+                        profileImagePlaceholder.style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Save URL to Supabase
+            uploadProfileImageButton.addEventListener('click', async function() {
+                if (!currentProjectId) {
+                    showStatus('Please select a project first', 'error');
+                    return;
+                }
+                
+                // Determine what to save (URL input or file)
+                let imageUrl = profileImageUrlInput.value.trim();
+                const file = profileImageInput.files[0];
+                
+                if (!imageUrl && !file) {
+                    showStatus('Please enter a URL or select a file', 'error');
+                    return;
+                }
+                
+                try {
+                    // Show uploading status
+                    showStatus('Processing profile image...', 'info');
+                    
+                    if (file) {
+                        // Option 1: Using external image hosting
+                        showStatus('Please note: This demo version only supports direct URLs. In production, files would be uploaded to cloud storage.', 'info');
+                        
+                        // Instead of actual upload, ask user to use a direct URL
+                        showStatus('Please use a direct image URL instead of file upload in this demo version', 'warning');
+                        return;
+                    }
+                    
+                    // Save URL to Supabase as a key-value pair
+                    if (imageUrl) {
+                        // First check if this key already exists
+                        const response = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content?project_id=eq.${encodeURIComponent(currentProjectId)}&key=eq.profile_image_url`, {
+                            method: 'GET',
+                            headers: {
+                                'apikey': SUPABASE_KEY,
+                                'Authorization': `Bearer ${SUPABASE_KEY}`
+                            }
+                        });
+                        
+                        const existingData = await response.json();
+                        
+                        if (existingData && existingData.length > 0) {
+                            // Update existing record
+                            const updateResponse = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content?project_id=eq.${encodeURIComponent(currentProjectId)}&key=eq.profile_image_url`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'apikey': SUPABASE_KEY,
+                                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({ value: imageUrl })
+                            });
+                            
+                            if (!updateResponse.ok) {
+                                throw new Error('Failed to update profile image URL');
+                            }
+                        } else {
+                            // Insert new record
+                            const insertResponse = await fetch(`${SUPABASE_URL}/rest/v1/dynamic_content`, {
+                                method: 'POST',
+                                headers: {
+                                    'apikey': SUPABASE_KEY,
+                                    'Authorization': `Bearer ${SUPABASE_KEY}`,
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    project_id: currentProjectId,
+                                    key: 'profile_image_url',
+                                    value: imageUrl
+                                })
+                            });
+                            
+                            if (!insertResponse.ok) {
+                                throw new Error('Failed to insert profile image URL');
+                            }
+                        }
+                        
+                        showStatus('Profile image URL saved successfully', 'success');
+                    }
+                } catch (error) {
+                    console.error('Error saving profile image:', error);
+                    showStatus(`Error saving profile image: ${error.message}`, 'error');
+                }
+            });
+            
+            // Initialize profile image preview if URL exists
+            if (currentProjectId) {
+                // Check if profile_image_url exists for this project
+                fetch(`${SUPABASE_URL}/rest/v1/dynamic_content?project_id=eq.${encodeURIComponent(currentProjectId)}&key=eq.profile_image_url`, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': SUPABASE_KEY,
+                        'Authorization': `Bearer ${SUPABASE_KEY}`
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data && data.length > 0 && data[0].value) {
+                        profileImageUrlInput.value = data[0].value;
+                        profileImagePreviewImage.src = data[0].value;
+                        profileImagePreviewImage.style.display = 'block';
+                        profileImagePlaceholder.style.display = 'none';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading profile image:', error);
+                });
+            }
+        }
+        
+        function updateProfileImagePreview(content) {
+            const profileImageUrlInput = document.getElementById('profile_image_url');
+            const profileImagePreviewImage = document.getElementById('profile-preview');
+            const profileImagePlaceholder = document.getElementById('profile-placeholder');
+            
+            if (profileImageUrlInput && profileImagePreviewImage && profileImagePlaceholder) {
+                // Check if profile_image_url exists in the content
+                if (content.profile_image_url) {
+                    profileImageUrlInput.value = content.profile_image_url;
+                    profileImagePreviewImage.src = content.profile_image_url;
+                    profileImagePreviewImage.style.display = 'block';
+                    profileImagePlaceholder.style.display = 'none';
+                } else {
+                    // Reset to default state
+                    profileImageUrlInput.value = '';
+                    profileImagePreviewImage.src = '';
+                    profileImagePreviewImage.style.display = 'none';
+                    profileImagePlaceholder.style.display = 'block';
+                }
+            }
+        }
+    </script>
+    <!-- MongoDB Adapter - intercepts Supabase calls and redirects to our MongoDB API -->
+    <script src="./supabase-adapter.js"></script>
+    
+    <!-- MongoDB Status Indicator -->
+    <script>
+        // Add MongoDB adapter status indicator
+        document.addEventListener('DOMContentLoaded', function() {
+            // Create status element
+            const statusElem = document.createElement('div');
+            statusElem.id = 'mongodb-status';
+            statusElem.style.position = 'fixed';
+            statusElem.style.bottom = '10px';
+            statusElem.style.left = '10px';
+            statusElem.style.background = '#2c3e50';
+            statusElem.style.color = 'white';
+            statusElem.style.padding = '8px 12px';
+            statusElem.style.borderRadius = '4px';
+            statusElem.style.zIndex = '9999';
+            statusElem.style.fontSize = '12px';
+            statusElem.style.boxShadow = '0 2px 5px rgba(0,0,0,0.2)';
+            statusElem.innerHTML = '<strong>MongoDB Connected</strong>';
+            document.body.appendChild(statusElem);
+            
+            // Check if our adapter is loaded
+            setTimeout(() => {
+                if (window.SupabaseAdapter) {
+                    statusElem.style.background = '#27ae60';
+                } else {
+                    statusElem.style.background = '#e74c3c';
+                    statusElem.innerHTML = '<strong>MongoDB Not Connected</strong>';
+                }
+            }, 2000);
+        });
+    </script>
+</body>
+</html>
