@@ -257,6 +257,13 @@
             // Check if user is already authenticated
             async function checkAuthStatus() {
                 try {
+                    // Check if we're in a redirect loop
+                    const fromEditor = new URLSearchParams(window.location.search).get('from') === 'editor';
+                    if (fromEditor) {
+                        // Don't redirect back to editor if we just came from there
+                        return;
+                    }
+                    
                     const { data: { session } } = await window.supabaseAuth.getSession();
                     
                     if (session) {
