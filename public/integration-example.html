@@ -183,7 +183,7 @@
         // Check API status
         async function checkApiStatus() {
             try {
-                const response = await fetch('http://localhost:3000/');
+                const response = await fetch('/');
                 if (response.ok) {
                     const data = await response.json();
                     document.getElementById('status').style.background = '#e8f5e9';
@@ -219,7 +219,7 @@
             
             try {
                 const projectId = 'adam-hyp-1';
-                const response = await fetch(`http://localhost:3000/api/projects/${projectId}`);
+                const response = await fetch(`/api/projects/${projectId}`);
                 const data = await response.json();
                 
                 resultElement.textContent = JSON.stringify(data, null, 2);
@@ -238,7 +238,7 @@
                 const key = document.getElementById('content-key').value;
                 const value = document.getElementById('content-value').value;
                 
-                const response = await fetch(`http://localhost:3000/api/projects/${projectId}/content`, {
+                const response = await fetch(`/api/projects/${projectId}/content`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SelfCast Direct Access</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-dark: #2980b9;
+            --secondary-color: #2c3e50;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .badge {
+            font-size: 0.7em;
+            background: var(--primary-dark);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+        
+        p {
+            margin-bottom: 20px;
+        }
+        
+        .button-container {
+            margin: 30px 0;
+        }
+        
+        .button {
+            display: inline-block;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 12px 24px;
+            font-size: 1rem;
+            cursor: pointer;
+            text-decoration: none;
+            margin: 0 10px;
+            transition: background-color 0.3s;
+        }
+        
+        .button:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .button.secondary {
+            background-color: #95a5a6;
+        }
+        
+        .button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+        
+        .info-box {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--primary-color);
+            padding: 15px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        
+        .info-box h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .info-box p {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .info-box ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-edit"></i> SelfCast Content Editor <span class="badge">MongoDB</span></h1>
+        
+        <p>Welcome to the SelfCast Content Management System powered by MongoDB. This page provides direct access to the Content Editor.</p>
+        
+        <div class="button-container">
+            <a href="Content-Editor-MongoDB.html?direct=true" class="button">Access Content Editor</a>
+            <a href="index.html" class="button secondary">Back to Home</a>
+        </div>
+        
+        <div class="info-box">
+            <h3>About Direct Access</h3>
+            <p>This page bypasses the normal authentication flow, allowing you to access the Content Editor directly. Use this if you're experiencing issues with the standard login process.</p>
+            
+            <h3>Normal Access</h3>
+            <p>For standard authenticated access, use:</p>
+            <ul>
+                <li>Email: vicsicard@gmail.com</li>
+                <li>Password: Jerrygarcia1993!</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

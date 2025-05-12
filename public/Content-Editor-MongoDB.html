@@ -1504,8 +1504,11 @@
                     return;
                 }
                 
-                const projects = await response.json();
-                log('Projects loaded from API:', projects);
+                const responseData = await response.json();
+                log('Projects loaded from API:', responseData);
+                
+                // Extract projects array from the response
+                const projects = responseData.projects || [];
                 
                 if (!projects || projects.length === 0) {
                     log('No projects found for current user');
@@ -1513,8 +1516,11 @@
                     return;
                 }
                 
+                // Convert to format expected by the editor (with project_id property)
+                const formattedProjects = projects.map(p => ({ project_id: p.projectId }));
+                
                 // Sort projects alphabetically
-                const sortedProjects = projects.sort((a, b) => {
+                const sortedProjects = formattedProjects.sort((a, b) => {
                     return a.project_id.localeCompare(b.project_id);
                 });
                 
@@ -1595,9 +1601,12 @@
                     throw new Error(`Failed to load content: ${response.status} ${response.statusText}`);
                 }
                 
-                const data = await response.json();
+                const responseData = await response.json();
                 
-                if (!data || data.length === 0) {
+                // Handle both direct array format and {data: [...]} format
+                const contentItems = responseData.data || responseData;
+                
+                if (!contentItems || contentItems.length === 0) {
                     showStatus(`No content found for project: ${projectId}`, 'error');
                     log('No content found for project', projectId);
                     return;
@@ -1605,7 +1614,7 @@
                 
                 // Process content data
                 const content = {};
-                data.forEach(item => {
+                contentItems.forEach(item => {
                     content[item.key] = item.value;
                 });
                 
@@ -1618,8 +1627,8 @@
                 // Enable view site button
                 viewSiteButton.style.display = 'inline-block';
                 
-                showStatus(`Loaded ${data.length} content items for project: ${projectId}`, 'success');
-                log('Content loaded successfully', data.length);
+                showStatus(`Loaded ${contentItems.length} content items for project: ${projectId}`, 'success');
+                log('Content loaded successfully', contentItems.length);
                 
                 // Update style preview if on styling tab
                 const stylePreview = document.getElementById('style-preview');
@@ -1942,7 +1951,26 @@
                 viewSiteButton.addEventListener('click', function() {
                     const selectedProjectId = projectSelect ? projectSelect.value : null;
                     if (selectedProjectId) {
-                        window.open(`/index.html?project_id=${selectedProjectId}`, '_blank');
+                        // In production, this should direct to the Vercel-hosted static site
+                        // The format is typically: https://{projectId}.selfcast.app or similar
+                        
+                        // For local development, we'll use the integration example
+                        // In production, this should be updated to use the actual domain pattern
+                        const isLocalDevelopment = window.location.hostname === 'localhost' || 
+                                                 window.location.hostname === '127.0.0.1';
+                        
+                        let siteUrl;
+                        if (isLocalDevelopment) {
+                            // Local development - use our simple preview page
+                            siteUrl = `/preview.html?project_id=${selectedProjectId}`;
+                            showStatus('Opening local preview. In production, this will open the actual site.', 'info');
+                        } else {
+                            // Production environment - direct to Vercel-hosted site
+                            // Replace this URL pattern with your actual Vercel site pattern
+                            siteUrl = `https://${selectedProjectId}.selfcast.app`;
+                        }
+                        
+                        window.open(siteUrl, '_blank');
                     } else {
                         showStatus('Please select a project first', 'error');
                     }
@@ -2242,7 +2270,10 @@
                     throw new Error(`Failed to fetch existing content: ${response.status} ${response.statusText}`);
                 }
                 
-                const existingData = await response.json();
+                const responseData = await response.json();
+                
+                // Handle both direct array format and {data: [...]} format
+                const existingData = responseData.data || responseData || [];
                 
                 // Get unique existing keys
                 const existingKeys = new Set(existingData.map(item => item.key));

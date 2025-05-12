@@ -30,7 +30,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure CORS
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || '*',
+  origin: '*', // Allow all origins in development
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
   optionsSuccessStatus: 204,
