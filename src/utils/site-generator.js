@@ -77,7 +77,7 @@ async function generateSite(projectId) {
     }
     
     // Copy template files to output directory
-    await copyTemplateFiles(templateDir, path.join(OUTPUT_DIR, projectId));
+    await copyTemplateFiles(templateDir, path.join(OUTPUT_DIR, projectId), contentMap);
     
     // Read the index.html template
     const indexTemplatePath = path.join(templateDir, 'index.html');
@@ -89,8 +89,8 @@ async function generateSite(projectId) {
     // Write the generated index.html
     await fs.writeFile(path.join(OUTPUT_DIR, projectId, 'index.html'), indexHtml);
     
-    // Create a config.js file for the site
-    await generateConfigJs(path.join(OUTPUT_DIR, projectId), projectId);
+    // Create a config.js file for the site with the content map
+    await generateConfigJs(path.join(OUTPUT_DIR, projectId), projectId, contentMap);
     
     // Determine the site URL
     const isProduction = process.env.NODE_ENV === 'production';
@@ -163,9 +163,10 @@ async function generateSite(projectId) {
  * Copy template files to the output directory
  * @param {string} templateDir - Source template directory
  * @param {string} outputDir - Destination directory
+ * @param {Object} contentMap - Content map for the project
  * @returns {Promise<void>}
  */
-async function copyTemplateFiles(templateDir, outputDir) {
+async function copyTemplateFiles(templateDir, outputDir, contentMap) {
   try {
     // Check if template directory exists
     try {
@@ -191,7 +192,23 @@ async function copyTemplateFiles(templateDir, outputDir) {
           if (stats.isDirectory()) {
             // Create directory and copy contents recursively
             await fs.mkdir(destPath, { recursive: true });
-            await copyTemplateFiles(sourcePath, destPath);
+            await copyTemplateFiles(sourcePath, destPath, contentMap);
+          } else if (file === 'script.js') {
+            // Use our custom static script.js instead of the template one
+            console.log('Using custom static script.js instead of template script.js');
+            const staticScriptPath = path.join(__dirname, 'static-script.js');
+            
+            try {
+              // Check if our static script exists
+              await fs.access(staticScriptPath);
+              // Copy our static script instead of the template one
+              await fs.copyFile(staticScriptPath, destPath);
+              console.log('Copied static script.js successfully');
+            } catch (scriptError) {
+              console.warn('Static script not found, using template script:', scriptError);
+              // Fall back to the template script if our static script doesn't exist
+              await fs.copyFile(sourcePath, destPath);
+            }
           } else {
             // Copy the file
             await fs.copyFile(sourcePath, destPath);
@@ -379,24 +396,70 @@ function replaceContentPlaceholders(html, contentMap) {
  * Generate a config.js file for the static site
  * @param {string} outputDir - Output directory
  * @param {string} projectId - Project ID
+ * @param {Object} contentMap - Content map for the project
  * @returns {Promise<void>}
  */
-async function generateConfigJs(outputDir, projectId) {
-  const configJs = `// SelfCast Dynamic - Static Site Configuration
-// Generated on ${new Date().toISOString()}
+async function generateConfigJs(outputDir, projectId, contentMap) {
+  try {
+    console.log('Generating config.js for static site');
+    
+    // Create a simplified config without Supabase dependencies
+    // Include the content map directly in the config.js file
+    const configContent = `// Static site configuration
+// This is a static site with pre-embedded content
+// No Supabase connection is needed
 
-window.SUPABASE_CONFIG = {
-  url: 'https://aqicztygjpmunfljjjuto.supabase.co',
-  key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxaWN6dHlnanBtdW5mbGpqdXRvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDM3MDU1ODIsImV4cCI6MjA1OTI4MTU4Mn0.5e2hvTckSSbTFLBjQiccrvjoBd6QQDX0X4tccFOc1rs'
+// Mock Supabase config to prevent errors
+const SUPABASE_CONFIG = {
+  url: 'https://static-site-no-supabase-needed',
+  key: 'static-site-no-supabase-needed'
 };
 
-window.PROJECT_ID = '${projectId}';
+// Project ID
+const PROJECT_ID = '${projectId}';
 
-// This is a static site - no API calls will be made
-window.IS_STATIC = true;
+// Pre-embedded content
+window.siteContent = ${JSON.stringify(contentMap, null, 2)};
+
+// Mock Supabase client to prevent errors
+window.supabase = {
+  createClient: function() {
+    console.log('Static site loaded - all content pre-embedded');
+    return {
+      from: function() {
+        return {
+          select: function() {
+            return this;
+          },
+          eq: function() {
+            return this;
+          },
+          then: function(callback) {
+            // Return pre-embedded content
+            callback({
+              data: [],
+              error: null
+            });
+            return this;
+          }
+        };
+      }
+    };
+  }
+};
+
+// Initialize site when loaded
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('Static site initialized with pre-embedded content');
+});
 `;
-  
-  await fs.writeFile(path.join(outputDir, 'config.js'), configJs);
+    
+    await fs.writeFile(path.join(outputDir, 'config.js'), configContent);
+    console.log('Generated config.js successfully');
+  } catch (error) {
+    console.error('Error generating config.js:', error);
+    throw error;
+  }
 }
 
 module.exports = {

@@ -81,6 +81,63 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Middleware to handle direct requests for config.js, script.js, etc.
+app.get('/sites/:projectId/:file', async (req, res, next) => {
+  try {
+    const { projectId, file } = req.params;
+    
+    // Handle special case for config.js and script.js
+    if (file === 'config.js' || file === 'script.js') {
+      const fs = require('fs').promises;
+      const filePath = path.join(__dirname, '../public/sites', projectId, file);
+      
+      try {
+        // Check if the file exists
+        await fs.access(filePath);
+        // File exists, continue to static file middleware
+        return next();
+      } catch (error) {
+        // File doesn't exist, check if the project exists
+        console.log(`File ${file} for project ${projectId} not found, checking project...`);
+        
+        // Check if the project directory exists
+        const projectPath = path.join(__dirname, '../public/sites', projectId);
+        try {
+          await fs.access(projectPath);
+          // Project exists but file doesn't, regenerate the site
+          console.log(`Project ${projectId} exists but ${file} is missing, regenerating...`);
+        } catch (projectError) {
+          // Project doesn't exist, check if it's a valid project ID
+          console.log(`Project directory for ${projectId} not found, checking database...`);
+        }
+        
+        // Import the generateSite function
+        const { generateSite } = require('./utils/site-generator');
+        
+        // Generate the site
+        const result = await generateSite(projectId);
+        
+        if (!result.success) {
+          console.error(`Failed to generate site for ${projectId}: ${result.error}`);
+          return res.status(404).json({
+            error: 'Not found',
+            message: `File ${file} for project ${projectId} could not be generated`
+          });
+        }
+        
+        // Site has been generated, continue to static file middleware
+        return next();
+      }
+    }
+    
+    // For other files, continue to next middleware
+    next();
+  } catch (error) {
+    console.error('Error in file middleware:', error);
+    next(error);
+  }
+});
+
 // Middleware to check if a site exists and regenerate it if needed
 app.use('/sites/:projectId', async (req, res, next) => {
   try {
