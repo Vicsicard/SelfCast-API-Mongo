@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 10000
       - key: CORS_ORIGIN
-        value: https://selfcast-dynamic.vercel.app
+        value: https://self-cast-api-mongo.vercel.app,https://selfcast-dynamic.vercel.app
       - key: MONGODB_URI
         value: mongodb+srv://vicsicard:Manniemae1993@cluster0.9uspndx.mongodb.net/selfcast?retryWrites=true&w=majority&appName=Cluster0
       # Add any other environment variables needed for production
