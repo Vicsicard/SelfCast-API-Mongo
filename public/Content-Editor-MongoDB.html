@@ -1973,10 +1973,10 @@
                                 siteUrl = `/sites/${selectedProjectId}/`;
                                 showStatus('Opening local site...', 'info');
                             } else {
-                                // Production environment - use Render for hosting
+                                // Production environment - use custom domain by default
                                 const renderUrl = 'selfcast-api-mongo.onrender.com';
-                                // Use custom domain if configured (future implementation)
-                                const useCustomDomain = false; // Set to true when custom domain is ready
+                                // Use custom domain by default
+                                const useCustomDomain = true; // Custom domain is now ready
                                 const customDomain = 'user.selfcaststudios.com';
                                 
                                 const baseUrl = useCustomDomain ? customDomain : renderUrl;
