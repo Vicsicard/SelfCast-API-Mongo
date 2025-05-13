@@ -1,0 +1,600 @@
+# Render Logs
+
+Please paste your Render logs here.
+
+
+Live tail
+MDT
+Menu
+==> Cloning from https://github.com/Vicsicard/SelfCast-API-Mongo
+==> Checking out commit 460828bea841d01be7c6239b2daa70ba0e517316 in branch render-subhost
+==> Downloading cache...
+==> Transferred 57MB in 7s. Extraction took 2s.
+==> Using Node.js version 22.14.0 (default)
+==> Docs on specifying a Node.js version: https://render.com/docs/node-version
+==> Using Bun version 1.1.0 (default)
+==> Docs on specifying a bun version: https://render.com/docs/bun-version
+==> Running build command 'npm install'...
+up to date, audited 184 packages in 838ms
+19 packages are looking for funding
+  run `npm fund` for details
+found 0 vulnerabilities
+==> Uploading build...
+==> Uploaded in 3.8s. Compression took 0.9s
+==> Build successful 🎉
+==> Deploying...
+==> Running 'node src/index.js'
+Server running on port 10000
+Access the API at http://localhost:10000
+Starting keep-alive service for Render...
+[2025-05-13T18:04:59.419Z] Keep-Alive: Keep-alive service started
+[2025-05-13T18:04:59.429Z] Keep-Alive: Starting ping cycle...
+[2025-05-13T18:04:59.431Z] Keep-Alive: Pinging https://selfcast-api-mongo.onrender.com/
+[2025-05-13T18:04:59.802Z] Keep-Alive: Received response: 200
+2025-05-13T18:05:00.205Z - HEAD /
+MongoDB connected
+[2025-05-13T18:05:00.433Z] Keep-Alive: Pinging https://selfcast-api-mongo.onrender.com/api/projects
+[2025-05-13T18:05:00.538Z] Keep-Alive: Received response: 200
+[2025-05-13T18:05:01.430Z] Keep-Alive: Pinging https://selfcast-api-mongo.onrender.com/api/projects/adam-hyp-1/content
+[2025-05-13T18:05:01.605Z] Keep-Alive: Received response: 200
+==> Your service is live 🎉
+2025-05-13T18:05:10.723Z - GET /
+2025-05-13T18:06:29.890Z - GET /Content-Editor-MongoDB.html?project_id=mark-youn-1
+2025-05-13T18:06:30.023Z - GET /config.js
+2025-05-13T18:06:30.042Z - GET /supabase-auth.js
+2025-05-13T18:06:30.045Z - GET /supabase-adapter.js
+2025-05-13T18:06:30.232Z - GET /api/projects
+2025-05-13T18:06:31.341Z - GET /api/projects/mark-youn-1/content
+2025-05-13T18:06:31.634Z - GET /api/projects/mark-youn-1/content
+2025-05-13T18:06:35.566Z - GET /api/projects/mark-youn-1/content
+2025-05-13T18:06:35.842Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:36.518Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:37.091Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:37.485Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:37.889Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:38.319Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:38.574Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:38.887Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:39.219Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:39.441Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:39.683Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:40.020Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:40.466Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:40.699Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:40.975Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:41.310Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:41.772Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:42.003Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:42.219Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:42.519Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:42.924Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:43.166Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:43.415Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:43.645Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:43.859Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:44.078Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:44.336Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:44.560Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:44.893Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:45.196Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:45.475Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:45.869Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:46.160Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:46.375Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:46.683Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:46.963Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:47.212Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:47.457Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:47.681Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:47.898Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:48.135Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:48.343Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:48.574Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:48.826Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:49.070Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:49.310Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:49.523Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:49.792Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:50.164Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:50.401Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:50.631Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:50.881Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:51.177Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:51.396Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:51.622Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:51.878Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:52.172Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:52.385Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:52.606Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:52.812Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:53.032Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:53.266Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:53.506Z - POST /api/projects/mark-youn-1/content
+2025-05-13T18:06:53.745Z - POST /api/projects/mark-youn-1/generate-site
+Received request to generate site for project: mark-youn-1
+Starting site generation for project: mark-youn-1
+Output directory: /opt/render/project/src/public/sites
+Created output directory: /opt/render/project/src/public/sites/mark-youn-1
+Content keys from database: [
+  'accent_color',
+  'additional_content_1',
+  'additional_content_2',
+  'background_color',
+  'blog_1',
+  'blog_1_active',
+  'blog_1_excerpt',
+  'blog_1_featured',
+  'blog_1_title',
+  'blog_2',
+  'blog_2_active',
+  'blog_2_excerpt',
+  'blog_2_featured',
+  'blog_2_title',
+  'blog_3',
+  'blog_3_title',
+  'blog_4',
+  'blog_4_title',
+  'blog_post_1',
+  'blog_post_1_content',
+  'blog_post_1_date',
+  'blog_post_1_description',
+  'blog_post_1_title',
+  'blog_post_2',
+  'blog_post_2_content',
+  'blog_post_2_date',
+  'blog_post_2_description',
+  'blog_post_2_title',
+  'blog_post_3',
+  'blog_post_3_content',
+  'blog_post_3_date',
+  'blog_post_3_description',
+  'blog_post_3_title',
+  'blog_post_4',
+  'blog_post_4_content',
+  'blog_post_4_date',
+  'blog_post_4_description',
+  'blog_post_4_title',
+  'body_font',
+  'client_company',
+  'client_name',
+  'client_notes',
+  'contact_address',
+  'contact_email',
+  'contact_form_subtitle',
+  'contact_form_success',
+  'contact_form_title',
+  'contact_hours',
+  'contact_phone',
+  'copyright_text',
+  'current_year',
+  'email_address',
+  'facebook_description',
+  'facebook_post',
+  'facebook_title',
+  'facebook_url',
+  'footer_text',
+  'full_name',
+  'heading_font',
+  'instagram_description',
+  'instagram_post',
+  'instagram_title',
+  'instagram_url',
+  'link_color',
+  'linkedin_description',
+  'linkedin_post',
+  'linkedin_title',
+  'linkedin_url',
+  'onboarding_text',
+  'onboarding_title',
+  'primary_color',
+  'profile_image_url',
+  'quote_1',
+  'quote_1_author',
+  'quote_1_text',
+  'quote_2',
+  'quote_2_author',
+  'quote_2_text',
+  'quote_3',
+  'quote_3_author',
+  'quote_3_text',
+  'rendered_bio_html',
+  'rendered_bio_html_card_1',
+  'rendered_bio_html_card_2',
+  'rendered_bio_html_card_3',
+  'rendered_footer_slogan',
+  'rendered_subtitle',
+  'rendered_title',
+  'secondary_color',
+  'site_subtitle',
+  'site_title',
+  'style_package',
+  'text_color',
+  'twitter_description',
+  'twitter_post',
+  'twitter_title',
+  'twitter_url',
+  'facebook_title_1',
+  'facebook_post_1',
+  'facebook_title_2',
+  ... 61 more items
+]
+Content map created: [
+  'accent_color',
+  'additional_content_1',
+  'additional_content_2',
+  'background_color',
+  'blog_1',
+  'blog_1_active',
+  'blog_1_excerpt',
+  'blog_1_featured',
+  'blog_1_title',
+  'blog_2',
+  'blog_2_active',
+  'blog_2_excerpt',
+  'blog_2_featured',
+  'blog_2_title',
+  'blog_3',
+  'blog_3_title',
+  'blog_4',
+  'blog_4_title',
+  'blog_post_1',
+  'blog_post_1_content',
+  'blog_post_1_date',
+  'blog_post_1_description',
+  'blog_post_1_title',
+  'blog_post_2',
+  'blog_post_2_content',
+  'blog_post_2_date',
+  'blog_post_2_description',
+  'blog_post_2_title',
+  'blog_post_3',
+  'blog_post_3_content',
+  'blog_post_3_date',
+  'blog_post_3_description',
+  'blog_post_3_title',
+  'blog_post_4',
+  'blog_post_4_content',
+  'blog_post_4_date',
+  'blog_post_4_description',
+  'blog_post_4_title',
+  'body_font',
+  'client_company',
+  'client_name',
+  'client_notes',
+  'contact_address',
+  'contact_email',
+  'contact_form_subtitle',
+  'contact_form_success',
+  'contact_form_title',
+  'contact_hours',
+  'contact_phone',
+  'copyright_text',
+  'current_year',
+  'email_address',
+  'facebook_description',
+  'facebook_post',
+  'facebook_title',
+  'facebook_url',
+  'footer_text',
+  'full_name',
+  'heading_font',
+  'instagram_description',
+  'instagram_post',
+  'instagram_title',
+  'instagram_url',
+  'link_color',
+  'linkedin_description',
+  'linkedin_post',
+  'linkedin_title',
+  'linkedin_url',
+  'onboarding_text',
+  'onboarding_title',
+  'primary_color',
+  'profile_image_url',
+  'quote_1',
+  'quote_1_author',
+  'quote_1_text',
+  'quote_2',
+  'quote_2_author',
+  'quote_2_text',
+  'quote_3',
+  'quote_3_author',
+  'quote_3_text',
+  'rendered_bio_html',
+  'rendered_bio_html_card_1',
+  'rendered_bio_html_card_2',
+  'rendered_bio_html_card_3',
+  'rendered_footer_slogan',
+  'rendered_subtitle',
+  'rendered_title',
+  'secondary_color',
+  'site_subtitle',
+  'site_title',
+  'style_package',
+  'text_color',
+  'twitter_description',
+  'twitter_post',
+  'twitter_title',
+  'twitter_url',
+  'facebook_title_1',
+  'facebook_post_1',
+  'facebook_title_2',
+  ... 29 more items
+]
+Replacing content placeholders with content map: [
+  'accent_color',
+  'additional_content_1',
+  'additional_content_2',
+  'background_color',
+  'blog_1',
+  'blog_1_active',
+  'blog_1_excerpt',
+  'blog_1_featured',
+  'blog_1_title',
+  'blog_2',
+  'blog_2_active',
+  'blog_2_excerpt',
+  'blog_2_featured',
+  'blog_2_title',
+  'blog_3',
+  'blog_3_title',
+  'blog_4',
+  'blog_4_title',
+  'blog_post_1',
+  'blog_post_1_content',
+  'blog_post_1_date',
+  'blog_post_1_description',
+  'blog_post_1_title',
+  'blog_post_2',
+  'blog_post_2_content',
+  'blog_post_2_date',
+  'blog_post_2_description',
+  'blog_post_2_title',
+  'blog_post_3',
+  'blog_post_3_content',
+  'blog_post_3_date',
+  'blog_post_3_description',
+  'blog_post_3_title',
+  'blog_post_4',
+  'blog_post_4_content',
+  'blog_post_4_date',
+  'blog_post_4_description',
+  'blog_post_4_title',
+  'body_font',
+  'client_company',
+  'client_name',
+  'client_notes',
+  'contact_address',
+  'contact_email',
+  'contact_form_subtitle',
+  'contact_form_success',
+  'contact_form_title',
+  'contact_hours',
+  'contact_phone',
+  'copyright_text',
+  'current_year',
+  'email_address',
+  'facebook_description',
+  'facebook_post',
+  'facebook_title',
+  'facebook_url',
+  'footer_text',
+  'full_name',
+  'heading_font',
+  'instagram_description',
+  'instagram_post',
+  'instagram_title',
+  'instagram_url',
+  'link_color',
+  'linkedin_description',
+  'linkedin_post',
+  'linkedin_title',
+  'linkedin_url',
+  'onboarding_text',
+  'onboarding_title',
+  'primary_color',
+  'profile_image_url',
+  'quote_1',
+  'quote_1_author',
+  'quote_1_text',
+  'quote_2',
+  'quote_2_author',
+  'quote_2_text',
+  'quote_3',
+  'quote_3_author',
+  'quote_3_text',
+  'rendered_bio_html',
+  'rendered_bio_html_card_1',
+  'rendered_bio_html_card_2',
+  'rendered_bio_html_card_3',
+  'rendered_footer_slogan',
+  'rendered_subtitle',
+  'rendered_title',
+  'secondary_color',
+  'site_subtitle',
+  'site_title',
+  'style_package',
+  'text_color',
+  'twitter_description',
+  'twitter_post',
+  'twitter_title',
+  'twitter_url',
+  'facebook_title_1',
+  'facebook_post_1',
+  'facebook_title_2',
+  ... 32 more items
+]
+Content keys available: [
+  'accent_color',
+  'additional_content_1',
+  'additional_content_2',
+  'background_color',
+  'blog_1',
+  'blog_1_active',
+  'blog_1_excerpt',
+  'blog_1_featured',
+  'blog_1_title',
+  'blog_2',
+  'blog_2_active',
+  'blog_2_excerpt',
+  'blog_2_featured',
+  'blog_2_title',
+  'blog_3',
+  'blog_3_title',
+  'blog_4',
+  'blog_4_title',
+  'blog_post_1',
+  'blog_post_1_content',
+  'blog_post_1_date',
+  'blog_post_1_description',
+  'blog_post_1_title',
+  'blog_post_2',
+  'blog_post_2_content',
+  'blog_post_2_date',
+  'blog_post_2_description',
+  'blog_post_2_title',
+  'blog_post_3',
+  'blog_post_3_content',
+  'blog_post_3_date',
+  'blog_post_3_description',
+  'blog_post_3_title',
+  'blog_post_4',
+  'blog_post_4_content',
+  'blog_post_4_date',
+  'blog_post_4_description',
+  'blog_post_4_title',
+  'body_font',
+  'client_company',
+  'client_name',
+  'client_notes',
+  'contact_address',
+  'contact_email',
+  'contact_form_subtitle',
+  'contact_form_success',
+  'contact_form_title',
+  'contact_hours',
+  'contact_phone',
+  'copyright_text',
+  'current_year',
+  'email_address',
+  'facebook_description',
+  'facebook_post',
+  'facebook_title',
+  'facebook_url',
+  'footer_text',
+  'full_name',
+  'heading_font',
+  'instagram_description',
+  'instagram_post',
+  'instagram_title',
+  'instagram_url',
+  'link_color',
+  'linkedin_description',
+  'linkedin_post',
+  'linkedin_title',
+  'linkedin_url',
+  'onboarding_text',
+  'onboarding_title',
+  'primary_color',
+  'profile_image_url',
+  'quote_1',
+  'quote_1_author',
+  'quote_1_text',
+  'quote_2',
+  'quote_2_author',
+  'quote_2_text',
+  'quote_3',
+  'quote_3_author',
+  'quote_3_text',
+  'rendered_bio_html',
+  'rendered_bio_html_card_1',
+  'rendered_bio_html_card_2',
+  'rendered_bio_html_card_3',
+  'rendered_footer_slogan',
+  'rendered_subtitle',
+  'rendered_title',
+  'secondary_color',
+  'site_subtitle',
+  'site_title',
+  'style_package',
+  'text_color',
+  'twitter_description',
+  'twitter_post',
+  'twitter_title',
+  'twitter_url',
+  'facebook_title_1',
+  'facebook_post_1',
+  'facebook_title_2',
+  ... 32 more items
+]
+Found profile image URL: https://imagestopost.carrd.co/assets/images/image09.jpg?v=a828a8fa
+Found title: Mark Young
+Found subtitle: Freedom, thoughtfulness, and figuring it out as I go — that’s my lane.
+Found blog 1 title (blog_1_title): Error saving blog post: No project selected
+Found blog 2 title (blog_2_title): Error saving blog post: No project selected
+Replacing data-key="rendered_title" with value: Mark Young
+Replacing data-key="rendered_title" with value: Mark Young
+Replacing data-key="rendered_subtitle" with value: Freedom, thoughtfulness, and f...
+Replacing data-key="profile_image_url" with value: https://imagestopost.carrd.co/...
+Replacing data-key="rendered_bio_html" with value: Hi, I’m Mark — and I’ve come t...
+Replacing data-key="quote_1" with value: "Softness is not a weakness. I...
+Replacing data-key="rendered_blog_post_1" with value: 
+Replacing data-key="rendered_blog_post_2" with value: 
+Replacing data-key="rendered_blog_post_3" with value: 
+Replacing data-key="rendered_blog_post_4" with value: 
+Replacing data-key="quote_2" with value: "Your truth doesn't have to be...
+Replacing data-key="facebook_post" with value: There’s a moment in the conver...
+Replacing data-key="twitter_post" with value: Everyone’s out here trying to ...
+Replacing data-key="instagram_post" with value: There are a few books I’ve rea...
+Replacing data-key="linkedin_post" with value: I’ve learned something importa...
+Replacing data-key="quote_3" with value: "The moment I stopped performi...
+Replacing data-key="facebook_url" with value: https://www.facebook.com
+Replacing data-key="twitter_url" with value: https://www.twitter.com
+Replacing data-key="instagram_url" with value: https://www.instagram.com
+Replacing data-key="linkedin_url" with value: https://www.linkedin.com
+Replacing data-key="rendered_footer_slogan" with value: Keep thinking. Keep walking. Y...
+Site generation completed successfully for project: mark-youn-1
+Site URL: https://user.selfcaststudios.com/sites/mark-youn-1/
+2025-05-13T18:06:54.257Z - GET /sites/mark-youn-1/
+2025-05-13T18:06:54.368Z - GET /sites/mark-youn-1/script.js
+2025-05-13T18:06:54.374Z - GET /sites/mark-youn-1/style.css
+2025-05-13T18:06:54.375Z - GET /sites/config.js
+Site for config.js does not exist at /opt/render/project/src/public/sites/config.js/index.html, regenerating...
+Starting site generation for project: config.js
+Output directory: /opt/render/project/src/public/sites
+Created output directory: /opt/render/project/src/public/sites/config.js
+Output directory exists: true
+Project directory exists: true
+Error generating site for config.js: Error: Project not found: config.js
+    at generateSite (/opt/render/project/src/src/utils/site-generator.js:36:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /opt/render/project/src/src/app.js:104:22
+Stack trace: Error: Project not found: config.js
+    at generateSite (/opt/render/project/src/src/utils/site-generator.js:36:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /opt/render/project/src/src/app.js:104:22
+Failed to generate site for config.js: Project not found: config.js
+2025-05-13T18:06:54.537Z - GET /favicon.ico
+2025-05-13T18:07:02.256Z - GET /sites/mark-youn-1/
+2025-05-13T18:07:02.395Z - GET /sites/config.js
+2025-05-13T18:07:02.476Z - GET /sites/config.js/
+2025-05-13T18:07:02.477Z - GET /sites/mark-youn-1/style.css
+Site for config.js does not exist at /opt/render/project/src/public/sites/config.js/index.html, regenerating...
+Starting site generation for project: config.js
+Output directory: /opt/render/project/src/public/sites
+Created output directory: /opt/render/project/src/public/sites/config.js
+2025-05-13T18:07:02.482Z - GET /sites/mark-youn-1/script.js
+Error generating site for config.js: Error: Project not found: config.js
+    at generateSite (/opt/render/project/src/src/utils/site-generator.js:36:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /opt/render/project/src/src/app.js:104:22
+Stack trace: Error: Project not found: config.js
+    at generateSite (/opt/render/project/src/src/utils/site-generator.js:36:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /opt/render/project/src/src/app.js:104:22
+Output directory exists: true
+Failed to generate site for config.js: Project not found: config.js
+Project directory exists: true
+2025-05-13T18:07:07.266Z - GET /sites/mark-youn-1/style.css
+==> Detected service running on port 10000
+==> Docs on specifying a port: https://render.com/docs/web-services#port-binding

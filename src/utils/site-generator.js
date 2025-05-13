@@ -233,40 +233,36 @@ async function copyTemplateFiles(templateDir, outputDir, contentMap) {
  */
 function replaceContentPlaceholders(html, contentMap) {
   console.log('Replacing content placeholders with content map:', Object.keys(contentMap));
-  
+
   // Replace data-key attributes with actual content
   let processedHtml = html;
-  
+
   // First, ensure window.siteContent is properly set with all content
   processedHtml = processedHtml.replace(
     /window\.siteContent\s*=\s*\{[^\}]*\};/,
     `window.siteContent = ${JSON.stringify(contentMap)};`
   );
-  
+
   // Log the keys we're looking for in the template
   console.log('Content keys available:', Object.keys(contentMap));
-  
+
   // Handle specific content types that need special processing
   // Profile image - try multiple possible field names
   const profileImageUrl = contentMap.profile_image_url || contentMap.profile_image || contentMap.avatar_url || '';
   if (profileImageUrl) {
     console.log('Found profile image URL:', profileImageUrl);
-    // Replace img src attributes for profile images
+
+    // Replace profile image in the header section
     processedHtml = processedHtml.replace(
-      /<img[^>]*class="profile-image"[^>]*src="[^"]*"[^>]*>/g,
+      /<div class="profile-image-container">([\s\S]*?)<\/div>/g,
+      `<div class="profile-image-container"><img class="profile-image" src="${profileImageUrl}" alt="Profile"></div>`
+    );
+    
+    // Replace any img with class="profile-image"
+    processedHtml = processedHtml.replace(
+      /<img[^>]*class="profile-image"[^>]*>/g,
       `<img class="profile-image" src="${profileImageUrl}" alt="Profile">`
     );
-    
-    // Also handle any other profile image placeholders
-    processedHtml = processedHtml.replace(
-      /<img[^>]*data-key="profile_image_url"[^>]*src="[^"]*"[^>]*>/g,
-      `<img data-key="profile_image_url" src="${profileImageUrl}" alt="Profile">`
-    );
-    
-    // Also set the profile_image_url in the content map if it doesn't exist
-    if (!contentMap.profile_image_url) {
-      contentMap.profile_image_url = profileImageUrl;
-    }
   }
   
   // Handle title and subtitle
@@ -306,7 +302,8 @@ function replaceContentPlaceholders(html, contentMap) {
     const possibleContentKeys = [
       `blog_${i}_content`,
       `blog${i}_content`,
-      `rendered_blog_${i}_content`
+      `rendered_blog_${i}_content`,
+      `rendered_blog_post_${i}`
     ];
     
     // Find the first available title key
@@ -330,17 +327,28 @@ function replaceContentPlaceholders(html, contentMap) {
     // Handle blog title
     if (titleKey && contentMap[titleKey]) {
       console.log(`Found blog ${i} title (${titleKey}):`, contentMap[titleKey]);
-      // Replace blog post title in various formats
+      
+      // Replace blog title in the blog card
+      processedHtml = processedHtml.replace(
+        new RegExp(`<h3 class="blog-title">Blog Post ${i}<\/h3>`, 'g'),
+        `<h3 class="blog-title">${contentMap[titleKey]}</h3>`
+      );
+      
+      // Replace blog title in the blog card
+      processedHtml = processedHtml.replace(
+        new RegExp(`<h3 class="blog-title">Blog Post ${i}<\/h3>`, 'g'),
+        `<h3 class="blog-title">${contentMap[titleKey]}</h3>`
+      );
       
       // Format 1: data-blog attribute
       processedHtml = processedHtml.replace(
-        new RegExp(`<h3[^>]*data-blog="${i}"[^>]*>[^<]*<\/h3>`, 'g'),
+        new RegExp(`<h3[^>]*data-blog="${i}"[^>]*>[\s\S]*?<\/h3>`, 'g'),
         `<h3 data-blog="${i}">${contentMap[titleKey]}</h3>`
       );
       
       // Format 2: data-key attribute
       processedHtml = processedHtml.replace(
-        new RegExp(`<h3[^>]*data-key="blog_${i}_title"[^>]*>[^<]*<\/h3>`, 'g'),
+        new RegExp(`<h3[^>]*data-key="blog_${i}_title"[^>]*>[\s\S]*?<\/h3>`, 'g'),
         `<h3 data-key="blog_${i}_title">${contentMap[titleKey]}</h3>`
       );
     }
@@ -349,22 +357,28 @@ function replaceContentPlaceholders(html, contentMap) {
     if (contentKey && contentMap[contentKey]) {
       console.log(`Found blog ${i} content (${contentKey}, length: ${contentMap[contentKey].length})`);
       
+      // Replace blog excerpt in the blog card
+      processedHtml = processedHtml.replace(
+        new RegExp(`<p class="excerpt blog-excerpt" data-key="rendered_blog_post_${i}">([\s\S]*?)<\/p>`, 'g'),
+        `<p class="excerpt blog-excerpt" data-key="rendered_blog_post_${i}">${contentMap[contentKey]}</p>`
+      );
+      
       // Format 1: data-blog-content attribute
-      const contentRegex1 = new RegExp(`<p[^>]*data-blog-content="${i}"[^>]*>[^<]*<\/p>`, 'g');
+      const contentRegex1 = new RegExp(`<p[^>]*data-blog-content="${i}"[^>]*>([\s\S]*?)<\/p>`, 'g');
       processedHtml = processedHtml.replace(
         contentRegex1,
         `<p data-blog-content="${i}">${contentMap[contentKey]}</p>`
       );
       
       // Format 2: data-key attribute
-      const contentRegex2 = new RegExp(`<p[^>]*data-key="blog_${i}_content"[^>]*>[^<]*<\/p>`, 'g');
+      const contentRegex2 = new RegExp(`<p[^>]*data-key="blog_${i}_content"[^>]*>[\s\S]*?<\/p>`, 'g');
       processedHtml = processedHtml.replace(
         contentRegex2,
         `<p data-key="blog_${i}_content">${contentMap[contentKey]}</p>`
       );
       
       // Format 3: div with data-key attribute (for longer content)
-      const contentRegex3 = new RegExp(`<div[^>]*data-key="blog_${i}_content"[^>]*>[^<]*<\/div>`, 'g');
+      const contentRegex3 = new RegExp(`<div[^>]*data-key="blog_${i}_content"[^>]*>[\s\S]*?<\/div>`, 'g');
       processedHtml = processedHtml.replace(
         contentRegex3,
         `<div data-key="blog_${i}_content">${contentMap[contentKey]}</div>`
@@ -372,18 +386,71 @@ function replaceContentPlaceholders(html, contentMap) {
     }
   }
   
+  // Handle color selections
+  const colorKeys = ['primary_color', 'accent_color', 'background_color', 'text_color'];
+  let customCss = '';
+  
+  colorKeys.forEach(key => {
+    if (contentMap[key]) {
+      console.log(`Found color setting for ${key}: ${contentMap[key]}`);
+      
+      // Add to custom CSS
+      switch(key) {
+        case 'primary_color':
+          customCss += `
+            :root { --primary-color: ${contentMap[key]}; }
+            .header, .footer, .action-button, .section-divider .divider-fill { background-color: ${contentMap[key]}; }
+          `;
+          break;
+        case 'accent_color':
+          customCss += `
+            :root { --accent-color: ${contentMap[key]}; }
+            .quote-card, .social-card h3, h2, .nav-links a:hover { color: ${contentMap[key]}; }
+          `;
+          break;
+        case 'background_color':
+          customCss += `
+            :root { --background-color: ${contentMap[key]}; }
+            body { background-color: ${contentMap[key]}; }
+          `;
+          break;
+        case 'text_color':
+          customCss += `
+            :root { --text-color: ${contentMap[key]}; }
+            body, p, h1, h3, h4, h5, h6 { color: ${contentMap[key]}; }
+          `;
+          break;
+      }
+    }
+  });
+  
+  // Add custom CSS to the style tag
+  if (customCss) {
+    processedHtml = processedHtml.replace(
+      /<style id="dynamic-theme"><\/style>/,
+      `<style id="dynamic-theme">${customCss}</style>`
+    );
+  }
+  
   // Find all data-key attributes and replace them
   const dataKeyRegex = /data-key="([^"]+)"/g;
   let match;
+  let htmlCopy = html; // Use a copy to find all matches without modifying the original
   
-  while ((match = dataKeyRegex.exec(html)) !== null) {
+  while ((match = dataKeyRegex.exec(htmlCopy)) !== null) {
     const key = match[1];
     const value = contentMap[key] || '';
     
+    // Skip if we've already handled this key in the specialized sections above
+    if (key.startsWith('rendered_blog_post_') || key === 'profile_image_url' || colorKeys.includes(key)) {
+      continue;
+    }
+    
     console.log(`Replacing data-key="${key}" with value: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
     
-    // Replace the content of the element with the value
-    const elementRegex = new RegExp(`<([^>]+)data-key="${key}"[^>]*>([^<]*)</`, 'g');
+    // Replace the content of the element with the value - using a more robust pattern
+    // that can handle multiline content between tags
+    const elementRegex = new RegExp(`<([^>]+)data-key="${key}"[^>]*>([\s\S]*?)</`, 'g');
     processedHtml = processedHtml.replace(elementRegex, (match, p1, p2) => {
       return `<${p1}data-key="${key}">${value}</`;
     });

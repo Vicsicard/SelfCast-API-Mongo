@@ -97,6 +97,20 @@ app.get('/sites/:projectId/:file', async (req, res, next) => {
         // File exists, continue to static file middleware
         return next();
       } catch (error) {
+        // If the file is config.js, check if there's a global config.js in the public directory
+        if (file === 'config.js') {
+          const globalConfigPath = path.join(__dirname, '../public/config.js');
+          
+          try {
+            await fs.access(globalConfigPath);
+            // Serve the global config.js file
+            return res.sendFile(globalConfigPath);
+          } catch (globalConfigError) {
+            // Global config.js doesn't exist, continue with site generation
+            console.log('Global config.js not found, continuing with site generation');
+          }
+        }
+        
         // File doesn't exist, check if the project exists
         console.log(`File ${file} for project ${projectId} not found, checking project...`);
         
@@ -142,6 +156,26 @@ app.get('/sites/:projectId/:file', async (req, res, next) => {
 app.use('/sites/:projectId', async (req, res, next) => {
   try {
     const projectId = req.params.projectId;
+    
+    // Special case: if projectId is 'config.js', don't try to generate a site
+    if (projectId === 'config.js') {
+      // Check if there's a global config.js in the public directory
+      const fs = require('fs').promises;
+      const globalConfigPath = path.join(__dirname, '../public/config.js');
+      
+      try {
+        await fs.access(globalConfigPath);
+        // Serve the global config.js file
+        return res.sendFile(globalConfigPath);
+      } catch (error) {
+        // Global config.js doesn't exist, return a 404
+        return res.status(404).json({
+          error: 'Not found',
+          message: 'Global config.js file not found'
+        });
+      }
+    }
+    
     const fs = require('fs').promises;
     const sitePath = path.join(__dirname, '../public/sites', projectId);
     const indexPath = path.join(sitePath, 'index.html');
