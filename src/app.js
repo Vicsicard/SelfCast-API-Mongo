@@ -30,13 +30,25 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure CORS
 const corsOptions = {
-  origin: '*', // Allow all origins in development
+  origin: process.env.NODE_ENV === 'production'
+    ? ['https://self-cast-api-mongo.vercel.app', 'https://selfcast-dynamic.vercel.app']
+    : '*', // Allow all origins in development
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
   optionsSuccessStatus: 204,
   credentials: true
 };
 app.use(cors(corsOptions));
+
+// Add CORS headers to all responses as a backup
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', process.env.NODE_ENV === 'production'
+    ? 'https://self-cast-api-mongo.vercel.app'
+    : '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
+});
 
 // Request logging middleware
 app.use((req, res, next) => {
