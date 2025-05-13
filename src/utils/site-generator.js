@@ -23,8 +23,12 @@ const DEFAULT_TEMPLATE = 'standard';
  */
 async function generateSite(projectId) {
   try {
+    console.log(`Starting site generation for project: ${projectId}`);
+    console.log(`Output directory: ${OUTPUT_DIR}`);
+    
     // Ensure output directory exists
     await fs.mkdir(path.join(OUTPUT_DIR, projectId), { recursive: true });
+    console.log(`Created output directory: ${path.join(OUTPUT_DIR, projectId)}`);
     
     // Get project content from database
     const project = await Project.findOne({ projectId });
@@ -88,17 +92,51 @@ async function generateSite(projectId) {
       siteUrl = `http://localhost:${port}/sites/${projectId}/`;
     }
     
+    console.log(`Site generation completed successfully for project: ${projectId}`);
+    console.log(`Site URL: ${siteUrl}`);
+    
     return {
       success: true,
-      projectId,
-      siteUrl,
+      message: `Site generated successfully for project: ${projectId}`,
+      url: siteUrl,
       generatedAt: new Date().toISOString()
     };
   } catch (error) {
-    console.error('Error generating site:', error);
+    console.error(`Error generating site for ${projectId}:`, error);
+    console.error('Stack trace:', error.stack);
+    
+    // Check if the output directory exists
+    try {
+      const outputDirExists = await fs.access(OUTPUT_DIR)
+        .then(() => true)
+        .catch(() => false);
+      
+      console.log(`Output directory exists: ${outputDirExists}`);
+      
+      if (!outputDirExists) {
+        console.log('Attempting to create output directory...');
+        await fs.mkdir(OUTPUT_DIR, { recursive: true });
+        console.log(`Created output directory: ${OUTPUT_DIR}`);
+      }
+      
+      // Check if the project directory exists
+      const projectDirExists = await fs.access(path.join(OUTPUT_DIR, projectId))
+        .then(() => true)
+        .catch(() => false);
+      
+      console.log(`Project directory exists: ${projectDirExists}`);
+      
+      if (!projectDirExists) {
+        console.log('Attempting to create project directory...');
+        await fs.mkdir(path.join(OUTPUT_DIR, projectId), { recursive: true });
+        console.log(`Created project directory: ${path.join(OUTPUT_DIR, projectId)}`);
+      }
+    } catch (dirError) {
+      console.error('Error checking/creating directories:', dirError);
+    }
+    
     return {
       success: false,
-      projectId,
       error: error.message
     };
   }

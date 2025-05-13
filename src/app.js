@@ -12,6 +12,7 @@ require('dotenv').config();
 
 // Import routes
 const projectRoutes = require('./routes/projects');
+const debugRoutes = require('./routes/debug');
 
 // Initialize Express app
 const app = express();
@@ -85,6 +86,7 @@ app.use('/sites', express.static(path.join(__dirname, '../public/sites')));
 
 // API Routes
 app.use('/api/projects', projectRoutes);
+app.use('/api/debug', debugRoutes);
 
 // API base route
 app.get('/api', (req, res) => {

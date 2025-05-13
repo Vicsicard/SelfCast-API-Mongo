@@ -3,7 +3,7 @@ services:
     name: selfcast-api-mongo
     env: node
     plan: free
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /
     envVars:
@@ -12,7 +12,13 @@ services:
       - key: PORT
         value: 10000
       - key: CORS_ORIGIN
-        value: https://self-cast-api-mongo.vercel.app,https://selfcast-dynamic.vercel.app
+        value: https://self-cast-api-mongo.vercel.app,https://selfcast-dynamic.vercel.app,https://selfcast-api-mongo.onrender.com,https://user.selfcaststudios.com
       - key: MONGODB_URI
         value: mongodb+srv://vicsicard:Manniemae1993@cluster0.9uspndx.mongodb.net/selfcast?retryWrites=true&w=majority&appName=Cluster0
+      - key: CUSTOM_DOMAIN
+        value: user.selfcaststudios.com
+      - key: USE_CUSTOM_DOMAIN
+        value: true
+      - key: RENDER_URL
+        value: selfcast-api-mongo.onrender.com
       # Add any other environment variables needed for production

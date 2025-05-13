@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
+    "build": "node src/utils/ensure-directories.js",
     "import-data": "node src/utils/import-sample-data.js",
     "migrate": "node src/utils/supabase-to-mongodb.js",
     "migrate:project": "node src/utils/supabase-to-mongodb.js",
