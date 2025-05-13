@@ -2006,8 +2006,10 @@
                                 showStatus('Opening local preview instead.', 'info');
                             } else {
                                 // Production environment - use the preview page on Vercel
-                                siteUrl = `https://self-cast-api-mongo.vercel.app/preview.html?project_id=${selectedProjectId}`;
+                                siteUrl = `https://selfcast-api-mongo.vercel.app/preview.html?project_id=${selectedProjectId}`;
+                                showStatus('Opening preview page instead.', 'info');
                             }
+                            console.log('Redirecting to preview URL:', siteUrl);
                             
                             window.open(siteUrl, '_blank');
                         }
