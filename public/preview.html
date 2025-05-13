@@ -132,8 +132,14 @@
                 // Display project content
                 showStatus(`Loaded ${data.length} content items for project: ${projectId}`, 'success');
                 
+                // Map the content to the expected format if needed
+                const formattedContent = data.map(item => ({
+                    key: item.key,
+                    value: item.value
+                }));
+                
                 // Sort content by key
-                const sortedContent = [...data].sort((a, b) => 
+                const sortedContent = [...formattedContent].sort((a, b) => 
                     a.key.localeCompare(b.key)
                 );
                 
