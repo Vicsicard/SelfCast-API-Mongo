@@ -76,10 +76,12 @@ async function generateSite(projectId) {
     let siteUrl;
     
     if (isProduction) {
-      // In production, use the Vercel domain pattern
-      // Use the VERCEL_URL environment variable if available, otherwise fallback to the default domain
-      const vercelUrl = process.env.VERCEL_URL || 'selfcast-api-mongo.vercel.app';
-      siteUrl = `https://${vercelUrl}/sites/${projectId}/`;
+      // In production, use the Render domain or custom domain if available
+      const customDomain = process.env.CUSTOM_DOMAIN || 'user.selfcaststudios.com';
+      const renderUrl = process.env.RENDER_URL || 'selfcast-api-mongo.onrender.com';
+      // Use custom domain if available, otherwise use Render URL
+      const baseUrl = process.env.USE_CUSTOM_DOMAIN === 'true' ? customDomain : renderUrl;
+      siteUrl = `https://${baseUrl}/sites/${projectId}/`;
     } else {
       // For local development
       const port = process.env.PORT || 3000;

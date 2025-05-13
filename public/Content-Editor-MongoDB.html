@@ -1966,20 +1966,26 @@
                             const isLocalDevelopment = window.location.hostname === 'localhost' || 
                                                      window.location.hostname === '127.0.0.1';
                             
-                            // Use the preview page directly instead of trying to generate a static site
-                            let previewUrl;
+                            // Try to open the static site first, fall back to preview page if needed
+                            let siteUrl;
                             if (isLocalDevelopment) {
-                                // Local development - use our simple preview page
-                                previewUrl = `/preview.html?project_id=${selectedProjectId}`;
-                                showStatus('Opening local preview...', 'info');
+                                // Local development - use local static site
+                                siteUrl = `/sites/${selectedProjectId}/`;
+                                showStatus('Opening local site...', 'info');
                             } else {
-                                // Production environment - use the preview page on Vercel
-                                previewUrl = `https://selfcast-api-mongo.vercel.app/preview.html?project_id=${selectedProjectId}`;
-                                showStatus('Opening preview page...', 'info');
+                                // Production environment - use Render for hosting
+                                const renderUrl = 'selfcast-api-mongo.onrender.com';
+                                // Use custom domain if configured (future implementation)
+                                const useCustomDomain = false; // Set to true when custom domain is ready
+                                const customDomain = 'user.selfcaststudios.com';
+                                
+                                const baseUrl = useCustomDomain ? customDomain : renderUrl;
+                                siteUrl = `https://${baseUrl}/sites/${selectedProjectId}/`;
+                                showStatus('Opening site...', 'info');
                             }
                             
-                            console.log('Opening preview URL:', previewUrl);
-                            window.open(previewUrl, '_blank');
+                            console.log('Opening site URL:', siteUrl);
+                            window.open(siteUrl, '_blank');
                         } catch (error) {
                             console.error('Error opening preview:', error);
                             showStatus(`Error: ${error.message}`, 'error');
