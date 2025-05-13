@@ -6,8 +6,14 @@
  */
 
 (function() {
-  // Get API URL from config.js
-  const API_BASE_URL = window.SUPABASE_CONFIG?.mongodb?.apiUrl || 'http://localhost:3000/api';
+  // Detect environment
+  const isProduction = window.location.hostname !== 'localhost' && 
+                    !window.location.hostname.includes('127.0.0.1');
+  
+  // Set API URL based on environment
+  const API_BASE_URL = isProduction
+    ? 'https://selfcast-api-mongo.onrender.com/api'  // Production Render URL
+    : (window.SUPABASE_CONFIG?.mongodb?.apiUrl || 'http://localhost:3000/api');  // Development URL
   console.log(`Supabase Adapter using API URL: ${API_BASE_URL}`);
   
   // Original fetch function

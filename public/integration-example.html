@@ -118,7 +118,7 @@
             <h2>Step 2: Integrating with Content Editor</h2>
             <p>To integrate with the Content Editor, add the following script tag just before the closing body tag:</p>
             
-            <pre><code>&lt;script src="http://localhost:3001/supabase-adapter.js"&gt;&lt;/script&gt;</code></pre>
+            <pre><code>&lt;script src="/supabase-adapter.js"&gt;&lt;/script&gt;</code></pre>
             
             <p>For production use, update the URL to your deployed API domain.</p>
             
@@ -180,10 +180,20 @@
     </div>
 
     <script>
+        // Detect environment
+        const isProduction = window.location.hostname !== 'localhost' && 
+                          !window.location.hostname.includes('127.0.0.1');
+        
+        // Set API URL based on environment
+        const apiBaseUrl = isProduction
+            ? 'https://selfcast-api-mongo.onrender.com'
+            : '';
+        
         // Check API status
         async function checkApiStatus() {
             try {
-                const response = await fetch('/');
+                // Try to fetch from the API root
+                const response = await fetch(apiBaseUrl + '/');
                 if (response.ok) {
                     const data = await response.json();
                     document.getElementById('status').style.background = '#e8f5e9';
@@ -214,16 +224,19 @@
 
         // Test getting project data
         async function getProject() {
-            const resultElement = document.getElementById('get-result');
-            resultElement.textContent = 'Loading...';
-            
             try {
                 const projectId = 'adam-hyp-1';
-                const response = await fetch(`/api/projects/${projectId}`);
-                const data = await response.json();
+                const response = await fetch(`${apiBaseUrl}/api/projects/${projectId}`);
                 
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                const resultElement = document.getElementById('get-result');
                 resultElement.textContent = JSON.stringify(data, null, 2);
             } catch (error) {
+                const resultElement = document.getElementById('get-result');
                 resultElement.textContent = `Error: ${error.message}`;
             }
         }
@@ -238,7 +251,7 @@
                 const key = document.getElementById('content-key').value;
                 const value = document.getElementById('content-value').value;
                 
-                const response = await fetch(`/api/projects/${projectId}/content`, {
+                const response = await fetch(`${apiBaseUrl}/api/projects/${projectId}/content`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
