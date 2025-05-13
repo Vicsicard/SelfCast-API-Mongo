@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SelfCast Site Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 {
+      color: #2c3e50;
+      border-bottom: 2px solid #3498db;
+      padding-bottom: 10px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    input, select, button {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background-color: #3498db;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #2980b9;
+    }
+    #result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      display: none;
+    }
+    .success {
+      color: #27ae60;
+    }
+    .error {
+      color: #e74c3c;
+    }
+  </style>
+</head>
+<body>
+  <h1>SelfCast Site Generator</h1>
+  
+  <div class="form-group">
+    <label for="project-id">Project ID:</label>
+    <input type="text" id="project-id" placeholder="Enter project ID" value="mark-youn-1">
+  </div>
+  
+  <button id="generate-btn">Generate Site</button>
+  
+  <div id="result"></div>
+  
+  <script>
+    document.getElementById('generate-btn').addEventListener('click', async function() {
+      const projectId = document.getElementById('project-id').value.trim();
+      const resultDiv = document.getElementById('result');
+      
+      if (!projectId) {
+        resultDiv.innerHTML = '<p class="error">Please enter a project ID</p>';
+        resultDiv.style.display = 'block';
+        return;
+      }
+      
+      resultDiv.innerHTML = '<p>Generating site, please wait...</p>';
+      resultDiv.style.display = 'block';
+      
+      try {
+        const response = await fetch(`/api/projects/${projectId}/generate-site`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          resultDiv.innerHTML = `
+            <p class="success">Site generated successfully!</p>
+            <p><strong>Project ID:</strong> ${data.projectId || projectId}</p>
+            <p><strong>Site URL:</strong> <a href="${data.url}" target="_blank">${data.url}</a></p>
+            <p><strong>Generated at:</strong> ${data.generatedAt}</p>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <p class="error">Error generating site:</p>
+            <p>${data.error || 'Unknown error'}</p>
+          `;
+        }
+      } catch (error) {
+        resultDiv.innerHTML = `
+          <p class="error">Error:</p>
+          <p>${error.message}</p>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>
