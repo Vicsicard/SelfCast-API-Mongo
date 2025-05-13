@@ -1952,7 +1952,7 @@
                     const selectedProjectId = projectSelect ? projectSelect.value : null;
                     if (selectedProjectId) {
                         // Show a loading status
-                        showStatus('Generating site...', 'info');
+                        showStatus('Preparing preview...', 'info');
                         
                         try {
                             // First, save the current content
@@ -1962,56 +1962,27 @@
                                 showStatus('Content saved successfully', 'success');
                             }
                             
-                            // Determine the API URL
+                            // Determine if we're in local development
                             const isLocalDevelopment = window.location.hostname === 'localhost' || 
                                                      window.location.hostname === '127.0.0.1';
                             
-                            const apiBaseUrl = isLocalDevelopment 
-                                ? 'http://localhost:3000/api' 
-                                : 'https://selfcast-api-mongo.onrender.com/api';
-                            
-                            // Call the generate-site API endpoint
-                            const response = await fetch(`${apiBaseUrl}/projects/${selectedProjectId}/generate-site`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-                            
-                            if (!response.ok) {
-                                throw new Error(`Failed to generate site: ${response.status} ${response.statusText}`);
-                            }
-                            
-                            const result = await response.json();
-                            
-                            if (!result.success) {
-                                throw new Error(result.error || 'Failed to generate site');
-                            }
-                            
-                            // Open the generated site URL
-                            showStatus(`Site generated successfully! Opening in a new tab...`, 'success');
-                            window.open(result.siteUrl, '_blank');
-                        } catch (error) {
-                            console.error('Error generating site:', error);
-                            showStatus(`Error: ${error.message}`, 'error');
-                            
-                            // Fallback to preview page if generation fails
-                            const isLocalDevelopment = window.location.hostname === 'localhost' || 
-                                                     window.location.hostname === '127.0.0.1';
-                            
-                            let siteUrl;
+                            // Use the preview page directly instead of trying to generate a static site
+                            let previewUrl;
                             if (isLocalDevelopment) {
                                 // Local development - use our simple preview page
-                                siteUrl = `/preview.html?project_id=${selectedProjectId}`;
-                                showStatus('Opening local preview instead.', 'info');
+                                previewUrl = `/preview.html?project_id=${selectedProjectId}`;
+                                showStatus('Opening local preview...', 'info');
                             } else {
                                 // Production environment - use the preview page on Vercel
-                                siteUrl = `https://selfcast-api-mongo.vercel.app/preview.html?project_id=${selectedProjectId}`;
-                                showStatus('Opening preview page instead.', 'info');
+                                previewUrl = `https://selfcast-api-mongo.vercel.app/preview.html?project_id=${selectedProjectId}`;
+                                showStatus('Opening preview page...', 'info');
                             }
-                            console.log('Redirecting to preview URL:', siteUrl);
                             
-                            window.open(siteUrl, '_blank');
+                            console.log('Opening preview URL:', previewUrl);
+                            window.open(previewUrl, '_blank');
+                        } catch (error) {
+                            console.error('Error opening preview:', error);
+                            showStatus(`Error: ${error.message}`, 'error');
                         }
                     } else {
                         showStatus('Please select a project first', 'error');

@@ -41,8 +41,9 @@ async function generateSite(projectId) {
     // Add current year to content
     contentMap.current_year = new Date().getFullYear().toString();
     
-    // Determine template style (use standard as default)
-    let templateStyle = contentMap.style_package || DEFAULT_TEMPLATE;
+    // Always use the standard template for now
+    // let templateStyle = contentMap.style_package || DEFAULT_TEMPLATE;
+    let templateStyle = 'standard';
     let templateDir = path.join(TEMPLATES_DIR, templateStyle);
     
     // Check if the template directory exists, if not, fall back to standard
