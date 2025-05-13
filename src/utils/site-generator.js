@@ -42,6 +42,23 @@ async function generateSite(projectId) {
       contentMap[item.key] = item.value;
     });
     
+    // Debug: Log all content keys and values
+    console.log('Content keys from database:', project.content.map(item => item.key));
+    console.log('Content map created:', Object.keys(contentMap));
+    
+    // Map rendered fields to their expected names in the template if needed
+    if (contentMap.rendered_title && !contentMap.title) {
+      contentMap.title = contentMap.rendered_title;
+    }
+    
+    if (contentMap.rendered_subtitle && !contentMap.subtitle) {
+      contentMap.subtitle = contentMap.rendered_subtitle;
+    }
+    
+    if (contentMap.rendered_bio_html && !contentMap.bio_html) {
+      contentMap.bio_html = contentMap.rendered_bio_html;
+    }
+    
     // Add current year to content
     contentMap.current_year = new Date().getFullYear().toString();
     
@@ -213,14 +230,26 @@ function replaceContentPlaceholders(html, contentMap) {
   console.log('Content keys available:', Object.keys(contentMap));
   
   // Handle specific content types that need special processing
-  // Profile image
-  if (contentMap.profile_image_url) {
-    console.log('Found profile image URL:', contentMap.profile_image_url);
+  // Profile image - try multiple possible field names
+  const profileImageUrl = contentMap.profile_image_url || contentMap.profile_image || contentMap.avatar_url || '';
+  if (profileImageUrl) {
+    console.log('Found profile image URL:', profileImageUrl);
     // Replace img src attributes for profile images
     processedHtml = processedHtml.replace(
       /<img[^>]*class="profile-image"[^>]*src="[^"]*"[^>]*>/g,
-      `<img class="profile-image" src="${contentMap.profile_image_url}" alt="Profile">`
+      `<img class="profile-image" src="${profileImageUrl}" alt="Profile">`
     );
+    
+    // Also handle any other profile image placeholders
+    processedHtml = processedHtml.replace(
+      /<img[^>]*data-key="profile_image_url"[^>]*src="[^"]*"[^>]*>/g,
+      `<img data-key="profile_image_url" src="${profileImageUrl}" alt="Profile">`
+    );
+    
+    // Also set the profile_image_url in the content map if it doesn't exist
+    if (!contentMap.profile_image_url) {
+      contentMap.profile_image_url = profileImageUrl;
+    }
   }
   
   // Handle title and subtitle
@@ -248,27 +277,80 @@ function replaceContentPlaceholders(html, contentMap) {
     );
   }
   
-  // Handle blog posts
+  // Handle blog posts - try both standard and rendered field names
   for (let i = 1; i <= 4; i++) {
-    const titleKey = `blog_${i}_title`;
-    const contentKey = `blog_${i}_content`;
+    // Check multiple possible field name patterns
+    const possibleTitleKeys = [
+      `blog_${i}_title`,
+      `blog${i}_title`,
+      `rendered_blog_${i}_title`
+    ];
     
-    if (contentMap[titleKey]) {
-      console.log(`Found blog ${i} title:`, contentMap[titleKey]);
-      // Replace blog post title
+    const possibleContentKeys = [
+      `blog_${i}_content`,
+      `blog${i}_content`,
+      `rendered_blog_${i}_content`
+    ];
+    
+    // Find the first available title key
+    let titleKey = null;
+    for (const key of possibleTitleKeys) {
+      if (contentMap[key]) {
+        titleKey = key;
+        break;
+      }
+    }
+    
+    // Find the first available content key
+    let contentKey = null;
+    for (const key of possibleContentKeys) {
+      if (contentMap[key]) {
+        contentKey = key;
+        break;
+      }
+    }
+    
+    // Handle blog title
+    if (titleKey && contentMap[titleKey]) {
+      console.log(`Found blog ${i} title (${titleKey}):`, contentMap[titleKey]);
+      // Replace blog post title in various formats
+      
+      // Format 1: data-blog attribute
       processedHtml = processedHtml.replace(
         new RegExp(`<h3[^>]*data-blog="${i}"[^>]*>[^<]*<\/h3>`, 'g'),
         `<h3 data-blog="${i}">${contentMap[titleKey]}</h3>`
       );
+      
+      // Format 2: data-key attribute
+      processedHtml = processedHtml.replace(
+        new RegExp(`<h3[^>]*data-key="blog_${i}_title"[^>]*>[^<]*<\/h3>`, 'g'),
+        `<h3 data-key="blog_${i}_title">${contentMap[titleKey]}</h3>`
+      );
     }
     
-    if (contentMap[contentKey]) {
-      console.log(`Found blog ${i} content (length: ${contentMap[contentKey].length})`);
-      // Replace blog post content
-      const contentRegex = new RegExp(`<p[^>]*data-blog-content="${i}"[^>]*>[^<]*<\/p>`, 'g');
+    // Handle blog content
+    if (contentKey && contentMap[contentKey]) {
+      console.log(`Found blog ${i} content (${contentKey}, length: ${contentMap[contentKey].length})`);
+      
+      // Format 1: data-blog-content attribute
+      const contentRegex1 = new RegExp(`<p[^>]*data-blog-content="${i}"[^>]*>[^<]*<\/p>`, 'g');
       processedHtml = processedHtml.replace(
-        contentRegex,
+        contentRegex1,
         `<p data-blog-content="${i}">${contentMap[contentKey]}</p>`
+      );
+      
+      // Format 2: data-key attribute
+      const contentRegex2 = new RegExp(`<p[^>]*data-key="blog_${i}_content"[^>]*>[^<]*<\/p>`, 'g');
+      processedHtml = processedHtml.replace(
+        contentRegex2,
+        `<p data-key="blog_${i}_content">${contentMap[contentKey]}</p>`
+      );
+      
+      // Format 3: div with data-key attribute (for longer content)
+      const contentRegex3 = new RegExp(`<div[^>]*data-key="blog_${i}_content"[^>]*>[^<]*<\/div>`, 'g');
+      processedHtml = processedHtml.replace(
+        contentRegex3,
+        `<div data-key="blog_${i}_content">${contentMap[contentKey]}</div>`
       );
     }
   }
