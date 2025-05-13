@@ -42,8 +42,17 @@ async function generateSite(projectId) {
     contentMap.current_year = new Date().getFullYear().toString();
     
     // Determine template style (use standard as default)
-    const templateStyle = contentMap.style_package || DEFAULT_TEMPLATE;
-    const templateDir = path.join(TEMPLATES_DIR, templateStyle);
+    let templateStyle = contentMap.style_package || DEFAULT_TEMPLATE;
+    let templateDir = path.join(TEMPLATES_DIR, templateStyle);
+    
+    // Check if the template directory exists, if not, fall back to standard
+    try {
+      await fs.access(templateDir);
+    } catch (error) {
+      console.log(`Template style '${templateStyle}' not found, falling back to standard template`);
+      templateStyle = 'standard';
+      templateDir = path.join(TEMPLATES_DIR, 'standard');
+    }
     
     // Copy template files to output directory
     await copyTemplateFiles(templateDir, path.join(OUTPUT_DIR, projectId));
@@ -98,6 +107,14 @@ async function generateSite(projectId) {
  */
 async function copyTemplateFiles(templateDir, outputDir) {
   try {
+    // Check if template directory exists
+    try {
+      await fs.access(templateDir);
+    } catch (error) {
+      console.error(`Template directory not found: ${templateDir}`);
+      throw new Error(`Template directory not found: ${templateDir}`);
+    }
+    
     // Get list of files in the template directory
     const files = await fs.readdir(templateDir);
     
@@ -107,16 +124,21 @@ async function copyTemplateFiles(templateDir, outputDir) {
         const sourcePath = path.join(templateDir, file);
         const destPath = path.join(outputDir, file);
         
-        // Get file stats to check if it's a directory
-        const stats = await fs.stat(sourcePath);
-        
-        if (stats.isDirectory()) {
-          // Create directory and copy contents recursively
-          await fs.mkdir(destPath, { recursive: true });
-          await copyTemplateFiles(sourcePath, destPath);
-        } else {
-          // Copy the file
-          await fs.copyFile(sourcePath, destPath);
+        try {
+          // Get file stats to check if it's a directory
+          const stats = await fs.stat(sourcePath);
+          
+          if (stats.isDirectory()) {
+            // Create directory and copy contents recursively
+            await fs.mkdir(destPath, { recursive: true });
+            await copyTemplateFiles(sourcePath, destPath);
+          } else {
+            // Copy the file
+            await fs.copyFile(sourcePath, destPath);
+          }
+        } catch (fileError) {
+          console.warn(`Error processing file ${sourcePath}:`, fileError);
+          // Continue with other files
         }
       }
     }

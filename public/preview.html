@@ -102,8 +102,16 @@
             try {
                 showStatus(`Loading content for project: ${projectId}...`);
                 
-                // Make relative request to the API
-                const response = await fetch(`/api/projects/${projectId}`);
+                // Determine if we're in production or development
+                const isProduction = window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1';
+                
+                // Set the API base URL based on environment
+                const apiBaseUrl = isProduction
+                    ? 'https://selfcast-api-mongo.onrender.com/api'
+                    : '/api';
+                
+                // Make request to the API
+                const response = await fetch(`${apiBaseUrl}/projects/${projectId}`);
                 
                 if (!response.ok) {
                     throw new Error(`Failed to load project: ${response.status} ${response.statusText}`);
