@@ -31,7 +31,12 @@ app.use(express.urlencoded({ extended: true }));
 // Configure CORS
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production'
-    ? ['https://self-cast-api-mongo.vercel.app', 'https://selfcast-dynamic.vercel.app']
+    ? [
+        'https://self-cast-api-mongo.vercel.app', 
+        'https://selfcast-dynamic.vercel.app',
+        'https://selfcast-api-mongo.onrender.com',
+        'https://user.selfcaststudios.com'
+      ]
     : '*', // Allow all origins in development
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
@@ -42,9 +47,25 @@ app.use(cors(corsOptions));
 
 // Add CORS headers to all responses as a backup
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', process.env.NODE_ENV === 'production'
-    ? 'https://self-cast-api-mongo.vercel.app'
-    : '*');
+  // Get the origin from the request
+  const origin = req.headers.origin;
+  
+  // List of allowed origins
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? [
+        'https://self-cast-api-mongo.vercel.app',
+        'https://selfcast-dynamic.vercel.app',
+        'https://selfcast-api-mongo.onrender.com',
+        'https://user.selfcaststudios.com'
+      ]
+    : ['*'];
+    
+  // Set the appropriate CORS header based on the origin
+  if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+    res.header('Access-Control-Allow-Origin', origin);
+  } else {
+    res.header('Access-Control-Allow-Origin', 'https://user.selfcaststudios.com');
+  }
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
   next();
