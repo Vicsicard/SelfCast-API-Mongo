@@ -123,16 +123,17 @@
                 console.log('API Response:', data); // Debug log
                 
                 // Check if we have content in the expected format
-                if (!data.success || !data.content || data.content.length === 0) {
+                // The API returns an array directly, not wrapped in a success/content object
+                if (!data || !Array.isArray(data) || data.length === 0) {
                     showStatus(`No content found for project: ${projectId}`, 'error');
                     return;
                 }
                 
                 // Display project content
-                showStatus(`Loaded ${data.content.length} content items for project: ${projectId}`, 'success');
+                showStatus(`Loaded ${data.length} content items for project: ${projectId}`, 'success');
                 
                 // Sort content by key
-                const sortedContent = [...data.content].sort((a, b) => 
+                const sortedContent = [...data].sort((a, b) => 
                     a.key.localeCompare(b.key)
                 );
                 
