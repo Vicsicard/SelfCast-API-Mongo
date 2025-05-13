@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: selfcast-api-mongo
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        value: https://selfcast-dynamic.vercel.app
+      - key: MONGODB_URI
+        value: mongodb+srv://vicsicard:Manniemae1993@cluster0.9uspndx.mongodb.net/selfcast?retryWrites=true&w=majority&appName=Cluster0
+      # Add any other environment variables needed for production

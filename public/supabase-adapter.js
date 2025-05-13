@@ -6,8 +6,9 @@
  */
 
 (function() {
-  // API Configuration - update this with your deployed API URL
-  const API_BASE_URL = 'http://localhost:3000/api';
+  // Get API URL from config.js
+  const API_BASE_URL = window.SUPABASE_CONFIG?.mongodb?.apiUrl || 'http://localhost:3000/api';
+  console.log(`Supabase Adapter using API URL: ${API_BASE_URL}`);
   
   // Original fetch function
   const originalFetch = window.fetch;

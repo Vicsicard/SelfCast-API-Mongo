@@ -109,6 +109,8 @@ selfcast-api/
 
 ## 🚀 Deployment
 
+Detailed deployment instructions are available in the [DEPLOYMENT.md](./DEPLOYMENT.md) file.
+
 ### MongoDB Atlas Setup
 
 1. Create a free [MongoDB Atlas account](https://www.mongodb.com/cloud/atlas/register)
@@ -118,6 +120,10 @@ selfcast-api/
 5. Get your connection string from the Atlas dashboard
 
 ### Render Deployment
+
+Two options are available for deploying to Render:
+
+#### Option 1: Manual Deployment
 
 1. Create a [Render account](https://render.com)
 2. Create a new Web Service
@@ -130,6 +136,22 @@ selfcast-api/
    - `CORS_ORIGIN` - URL of your frontend
    - `NODE_ENV` - Set to `production`
 7. Deploy your service
+
+#### Option 2: Blueprint Deployment (Recommended)
+
+1. Use the provided `render.yaml` file in the repository
+2. In your Render dashboard, create a new Blueprint
+3. Connect your GitHub repository
+4. Render will automatically detect the configuration and set up your services
+5. Review and apply the configuration
+
+### Production Configuration
+
+The project includes production-ready configuration files:
+
+- `.env.production` - Environment variables for production
+- `render.yaml` - Render Blueprint configuration
+- `public/config.js` - Auto-detects environment and sets correct API URLs
 
 ## 📝 Next Steps
 

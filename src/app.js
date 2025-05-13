@@ -50,6 +50,21 @@ app.use(express.static(path.join(__dirname, '../public')));
 // API Routes
 app.use('/api/projects', projectRoutes);
 
+// API base route
+app.get('/api', (req, res) => {
+  res.json({
+    message: 'SelfCast API - MongoDB Edition',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      projects: '/api/projects',
+      specificProject: '/api/projects/:projectId',
+      projectContent: '/api/projects/:projectId/content'
+    },
+    documentation: 'See README.md for more details'
+  });
+});
+
 // Root route
 app.get('/', (req, res) => {
   res.json({
