@@ -81,6 +81,45 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Middleware to check if a site exists and regenerate it if needed
+app.use('/sites/:projectId', async (req, res, next) => {
+  try {
+    const projectId = req.params.projectId;
+    const fs = require('fs').promises;
+    const sitePath = path.join(__dirname, '../public/sites', projectId);
+    const indexPath = path.join(sitePath, 'index.html');
+    
+    // Check if the site exists
+    try {
+      await fs.access(indexPath);
+      // Site exists, continue to static file middleware
+      next();
+    } catch (error) {
+      console.log(`Site for ${projectId} does not exist at ${indexPath}, regenerating...`);
+      
+      // Import the generateSite function
+      const { generateSite } = require('./utils/site-generator');
+      
+      // Generate the site
+      const result = await generateSite(projectId);
+      
+      if (!result.success) {
+        console.error(`Failed to generate site for ${projectId}: ${result.error}`);
+        return res.status(404).json({
+          error: 'Not found',
+          message: `Site for project ${projectId} could not be generated`
+        });
+      }
+      
+      // Site has been generated, continue to static file middleware
+      next();
+    }
+  } catch (error) {
+    console.error('Error in site middleware:', error);
+    next(error);
+  }
+});
+
 // Serve generated static sites
 app.use('/sites', express.static(path.join(__dirname, '../public/sites')));
 

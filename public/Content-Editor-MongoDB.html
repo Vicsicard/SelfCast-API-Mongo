@@ -1966,7 +1966,35 @@
                             const isLocalDevelopment = window.location.hostname === 'localhost' || 
                                                      window.location.hostname === '127.0.0.1';
                             
-                            // Try to open the static site first, fall back to preview page if needed
+                            // First, trigger site generation to ensure it's up to date
+                            try {
+                                // Generate the site first to ensure it's up to date
+                                const generateUrl = isLocalDevelopment
+                                    ? `/api/projects/${selectedProjectId}/generate-site`
+                                    : `https://${window.location.hostname}/api/projects/${selectedProjectId}/generate-site`;
+                                
+                                showStatus('Generating site...', 'info');
+                                const generateResponse = await fetch(generateUrl, { method: 'POST' });
+                                
+                                if (!generateResponse.ok) {
+                                    throw new Error(`Failed to generate site: ${generateResponse.status}`);
+                                }
+                                
+                                const generateResult = await generateResponse.json();
+                                console.log('Site generation result:', generateResult);
+                                
+                                if (!generateResult.success) {
+                                    throw new Error(generateResult.error || 'Failed to generate site');
+                                }
+                                
+                                showStatus('Site generated successfully', 'success');
+                            } catch (genError) {
+                                console.error('Error generating site:', genError);
+                                showStatus(`Error generating site: ${genError.message}`, 'warning');
+                                // Continue anyway to try opening the site
+                            }
+                            
+                            // Now open the site
                             let siteUrl;
                             if (isLocalDevelopment) {
                                 // Local development - use local static site
