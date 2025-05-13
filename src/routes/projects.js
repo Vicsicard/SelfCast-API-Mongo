@@ -7,6 +7,7 @@
 const express = require('express');
 const router = express.Router();
 const Project = require('../models/Project');
+const { generateSite } = require('../utils/site-generator');
 
 /**
  * GET /api/projects
@@ -210,6 +211,34 @@ router.post('/', async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to create project' 
+    });
+  }
+});
+
+/**
+ * POST /api/projects/:projectId/generate-site
+ * Generate a static site for a project
+ */
+router.post('/:projectId/generate-site', async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // Generate the static site
+    const result = await generateSite(projectId);
+    
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        error: result.error || 'Failed to generate site'
+      });
+    }
+    
+    res.json(result);
+  } catch (error) {
+    console.error('Error generating site:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate site'
     });
   }
 });

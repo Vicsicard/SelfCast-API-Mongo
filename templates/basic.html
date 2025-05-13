@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{title}} - SelfCast Dynamic</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>{{title}}</h1>
+            <p class="subtitle">{{subtitle}}</p>
+        </div>
+    </header>
+    
+    <main class="container">
+        <section class="profile">
+            {{#if profile_image_url}}
+            <img src="{{profile_image_url}}" alt="Profile" class="profile-image">
+            {{/if}}
+            <div class="bio">
+                {{{bio_html}}}
+            </div>
+        </section>
+        
+        <section class="blog-posts">
+            <h2>Blog Posts</h2>
+            {{#each blog_posts}}
+            <div class="blog-post">
+                <h3>{{title}}</h3>
+                <div class="blog-content">{{{content}}}</div>
+            </div>
+            {{else}}
+            <p>No blog posts available.</p>
+            {{/each}}
+        </section>
+        
+        <section class="quotes">
+            <h2>Quotes</h2>
+            {{#each quotes}}
+            <div class="quote">
+                <div class="quote-text">{{text}}</div>
+                {{#if author}}
+                <div class="quote-author">— {{author}}</div>
+                {{/if}}
+            </div>
+            {{else}}
+            <p>No quotes available.</p>
+            {{/each}}
+        </section>
+        
+        <section class="contact">
+            <h2>Contact</h2>
+            <div class="contact-info">
+                {{#if contact_email}}
+                <p><i class="fas fa-envelope"></i> {{contact_email}}</p>
+                {{/if}}
+                {{#if contact_phone}}
+                <p><i class="fas fa-phone"></i> {{contact_phone}}</p>
+                {{/if}}
+                {{#if contact_address}}
+                <p><i class="fas fa-map-marker-alt"></i> {{contact_address}}</p>
+                {{/if}}
+                {{#if contact_hours}}
+                <p><i class="fas fa-clock"></i> {{contact_hours}}</p>
+                {{/if}}
+            </div>
+        </section>
+    </main>
+    
+    <footer>
+        <div class="container">
+            <p>&copy; {{current_year}} {{title}}</p>
+        </div>
+    </footer>
+</body>
+</html>

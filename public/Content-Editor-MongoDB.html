@@ -1948,29 +1948,69 @@
             
             // View site button
             if (viewSiteButton) {
-                viewSiteButton.addEventListener('click', function() {
+                viewSiteButton.addEventListener('click', async function() {
                     const selectedProjectId = projectSelect ? projectSelect.value : null;
                     if (selectedProjectId) {
-                        // In production, this should direct to the Vercel-hosted static site
-                        // The format is typically: https://{projectId}.selfcast.app or similar
+                        // Show a loading status
+                        showStatus('Generating site...', 'info');
                         
-                        // For local development, we'll use the integration example
-                        // In production, this should be updated to use the actual domain pattern
-                        const isLocalDevelopment = window.location.hostname === 'localhost' || 
-                                                 window.location.hostname === '127.0.0.1';
-                        
-                        let siteUrl;
-                        if (isLocalDevelopment) {
-                            // Local development - use our simple preview page
-                            siteUrl = `/preview.html?project_id=${selectedProjectId}`;
-                            showStatus('Opening local preview. In production, this will open the actual site.', 'info');
-                        } else {
-                            // Production environment - direct to Vercel-hosted site
-                            // Replace this URL pattern with your actual Vercel site pattern
-                            siteUrl = `https://${selectedProjectId}.selfcast.app`;
+                        try {
+                            // First, save the current content
+                            if (currentProjectId) {
+                                const contentItems = collectFormData();
+                                await saveContent(currentProjectId, contentItems);
+                                showStatus('Content saved successfully', 'success');
+                            }
+                            
+                            // Determine the API URL
+                            const isLocalDevelopment = window.location.hostname === 'localhost' || 
+                                                     window.location.hostname === '127.0.0.1';
+                            
+                            const apiBaseUrl = isLocalDevelopment 
+                                ? 'http://localhost:3000/api' 
+                                : 'https://selfcast-api-mongo.onrender.com/api';
+                            
+                            // Call the generate-site API endpoint
+                            const response = await fetch(`${apiBaseUrl}/projects/${selectedProjectId}/generate-site`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`Failed to generate site: ${response.status} ${response.statusText}`);
+                            }
+                            
+                            const result = await response.json();
+                            
+                            if (!result.success) {
+                                throw new Error(result.error || 'Failed to generate site');
+                            }
+                            
+                            // Open the generated site URL
+                            showStatus(`Site generated successfully! Opening in a new tab...`, 'success');
+                            window.open(result.siteUrl, '_blank');
+                        } catch (error) {
+                            console.error('Error generating site:', error);
+                            showStatus(`Error: ${error.message}`, 'error');
+                            
+                            // Fallback to preview page if generation fails
+                            const isLocalDevelopment = window.location.hostname === 'localhost' || 
+                                                     window.location.hostname === '127.0.0.1';
+                            
+                            let siteUrl;
+                            if (isLocalDevelopment) {
+                                // Local development - use our simple preview page
+                                siteUrl = `/preview.html?project_id=${selectedProjectId}`;
+                                showStatus('Opening local preview instead.', 'info');
+                            } else {
+                                // Production environment - use the preview page on Vercel
+                                siteUrl = `https://self-cast-api-mongo.vercel.app/preview.html?project_id=${selectedProjectId}`;
+                            }
+                            
+                            window.open(siteUrl, '_blank');
                         }
-                        
-                        window.open(siteUrl, '_blank');
                     } else {
                         showStatus('Please select a project first', 'error');
                     }

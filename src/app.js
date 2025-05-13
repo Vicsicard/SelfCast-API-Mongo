@@ -59,6 +59,9 @@ app.use((req, res, next) => {
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Serve generated static sites
+app.use('/sites', express.static(path.join(__dirname, '../public/sites')));
+
 // API Routes
 app.use('/api/projects', projectRoutes);
 
