@@ -164,6 +164,70 @@
             headers: { 'Content-Type': 'application/json' }
           });
         });
+      } else if (isInsert && url.includes('dynamic_content') && !projectId && options && options.body) {
+        // Batch insert to dynamic_content endpoint
+        console.log('📤 Redirecting to MongoDB API - Batch content insert');
+        
+        // Parse the original body
+        let bodyData;
+        try {
+          bodyData = JSON.parse(options.body);
+        } catch (error) {
+          console.error('Error parsing body:', error);
+          return Promise.reject(new Error('Invalid body format'));
+        }
+        
+        // Extract project ID from the first item
+        if (Array.isArray(bodyData) && bodyData.length > 0 && bodyData[0].project_id) {
+          const batchProjectId = bodyData[0].project_id;
+          
+          // Transform data format for our API
+          const contentItems = bodyData.map(item => ({
+            key: item.key,
+            value: item.value
+          }));
+          
+          // Make the request to our API
+          return originalFetch(`${API_BASE_URL}/projects/${batchProjectId}/content`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(contentItems)
+          }).then(response => {
+            if (!response.ok) {
+              throw new Error('API request failed');
+            }
+            return response.json();
+          }).then(data => {
+            console.log(`✅ Batch content saved successfully to MongoDB API (${contentItems.length} items)`);
+            // Transform the response to match Supabase format
+            return new Response(JSON.stringify({ 
+              data: bodyData
+            }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }).catch(error => {
+            console.error('❌ API Error:', error);
+            return new Response(JSON.stringify({ 
+              data: null, 
+              error: error.message 
+            }), {
+              status: 500,
+              headers: { 'Content-Type': 'application/json' }
+            });
+          });
+        } else {
+          console.error('❌ Invalid batch format or missing project_id');
+          return new Response(JSON.stringify({ 
+            data: null, 
+            error: 'Invalid batch format or missing project_id' 
+          }), {
+            status: 400,
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
       } else if (url.includes('from=dynamic_content') && !projectId) {
         // GET all projects
         console.log('📋 Redirecting to MongoDB API - GET all projects');
