@@ -198,8 +198,80 @@ async function copyTemplateFiles(templateDir, outputDir) {
  * @returns {string} - Processed HTML
  */
 function replaceContentPlaceholders(html, contentMap) {
+  console.log('Replacing content placeholders with content map:', Object.keys(contentMap));
+  
   // Replace data-key attributes with actual content
   let processedHtml = html;
+  
+  // First, ensure window.siteContent is properly set with all content
+  processedHtml = processedHtml.replace(
+    /window\.siteContent\s*=\s*\{[^\}]*\};/,
+    `window.siteContent = ${JSON.stringify(contentMap)};`
+  );
+  
+  // Log the keys we're looking for in the template
+  console.log('Content keys available:', Object.keys(contentMap));
+  
+  // Handle specific content types that need special processing
+  // Profile image
+  if (contentMap.profile_image_url) {
+    console.log('Found profile image URL:', contentMap.profile_image_url);
+    // Replace img src attributes for profile images
+    processedHtml = processedHtml.replace(
+      /<img[^>]*class="profile-image"[^>]*src="[^"]*"[^>]*>/g,
+      `<img class="profile-image" src="${contentMap.profile_image_url}" alt="Profile">`
+    );
+  }
+  
+  // Handle title and subtitle
+  if (contentMap.title) {
+    console.log('Found title:', contentMap.title);
+    // Replace title in head
+    processedHtml = processedHtml.replace(
+      /<title[^>]*>[^<]*<\/title>/,
+      `<title>${contentMap.title}</title>`
+    );
+    
+    // Replace h1 with title
+    processedHtml = processedHtml.replace(
+      /<h1[^>]*>[^<]*<\/h1>/,
+      `<h1>${contentMap.title}</h1>`
+    );
+  }
+  
+  if (contentMap.subtitle) {
+    console.log('Found subtitle:', contentMap.subtitle);
+    // Replace subtitle
+    processedHtml = processedHtml.replace(
+      /<p[^>]*class="subtitle"[^>]*>[^<]*<\/p>/,
+      `<p class="subtitle">${contentMap.subtitle}</p>`
+    );
+  }
+  
+  // Handle blog posts
+  for (let i = 1; i <= 4; i++) {
+    const titleKey = `blog_${i}_title`;
+    const contentKey = `blog_${i}_content`;
+    
+    if (contentMap[titleKey]) {
+      console.log(`Found blog ${i} title:`, contentMap[titleKey]);
+      // Replace blog post title
+      processedHtml = processedHtml.replace(
+        new RegExp(`<h3[^>]*data-blog="${i}"[^>]*>[^<]*<\/h3>`, 'g'),
+        `<h3 data-blog="${i}">${contentMap[titleKey]}</h3>`
+      );
+    }
+    
+    if (contentMap[contentKey]) {
+      console.log(`Found blog ${i} content (length: ${contentMap[contentKey].length})`);
+      // Replace blog post content
+      const contentRegex = new RegExp(`<p[^>]*data-blog-content="${i}"[^>]*>[^<]*<\/p>`, 'g');
+      processedHtml = processedHtml.replace(
+        contentRegex,
+        `<p data-blog-content="${i}">${contentMap[contentKey]}</p>`
+      );
+    }
+  }
   
   // Find all data-key attributes and replace them
   const dataKeyRegex = /data-key="([^"]+)"/g;
@@ -209,18 +281,14 @@ function replaceContentPlaceholders(html, contentMap) {
     const key = match[1];
     const value = contentMap[key] || '';
     
+    console.log(`Replacing data-key="${key}" with value: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
+    
     // Replace the content of the element with the value
     const elementRegex = new RegExp(`<([^>]+)data-key="${key}"[^>]*>([^<]*)</`, 'g');
     processedHtml = processedHtml.replace(elementRegex, (match, p1, p2) => {
       return `<${p1}data-key="${key}">${value}</`;
     });
   }
-  
-  // Replace window.siteContent with the content map
-  processedHtml = processedHtml.replace(
-    /window\.siteContent = \{[^\}]*\};/,
-    `window.siteContent = ${JSON.stringify(contentMap)};`
-  );
   
   return processedHtml;
 }
