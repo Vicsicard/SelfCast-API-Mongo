@@ -111,7 +111,9 @@
                     : '/api';
                 
                 // Make request to the API
-                const response = await fetch(`${apiBaseUrl}/projects/${projectId}`);
+                console.log(`Fetching from: ${apiBaseUrl}/projects/${projectId}/content`);
+                // Use the content endpoint directly for more reliable results
+                const response = await fetch(`${apiBaseUrl}/projects/${projectId}/content`);
                 
                 if (!response.ok) {
                     throw new Error(`Failed to load project: ${response.status} ${response.statusText}`);
