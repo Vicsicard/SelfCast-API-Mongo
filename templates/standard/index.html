@@ -12,7 +12,39 @@
     <!-- Site Scripts -->
     <script>
       // Static content pre-loaded from build
-      window.siteContent = {"facebook_url":"https://www.facebook.com","facebook_post":"I’ve been reflecting a lot on the kind of healing that doesn’t get talked about enough.\nThe kind that’s quiet. The kind that doesn’t come from a breakdown or a dramatic moment — but from small choices, deep listening, and learning how to trust yourself again.\nIn my latest blog series, I wrote about how my own journey moved from survival to softness… and how we can all begin to heal without pushing ourselves into pain.\nIf any part of you is craving a gentler way forward, I’d love to share these reflections with you.\n➡️ Read the posts at anniesicard.com\n🧠 I’m also curious — has your biggest growth come from chaos… or calm?\n Let’s talk 💬\n#healingjourney #personalgrowth #gentlehealing #storytelling #selfcaststudios\n","twitter_url":"https://www.twitter.com","twitter_post":"Not all healing looks like a breakthrough.\nSometimes, healing looks like:\n – Softening your voice\n – Saying “no” for the first time\n – Letting yourself rest without guilt\nGrowth doesn’t have to hurt.\n#softpower #healingjourney #selftrust #emotionalresilience\n","instagram_url":"https://www.instagram.com","client_name":"{{client_name}}","style_package":"standard","current_year":"2025","linkedin_url":"https://www.linkedin.com","rendered_title":"{{rendered_title}}","rendered_subtitle":"{{rendered_subtitle}}","instagram_post":"✨ Not all growth is loud.\nSometimes the most powerful healing comes in silence — in the small moments when we finally start listening to ourselves.\nI used to think I had to fight to grow.\n Now I know:\n 🌿 Growth can be soft.\n 🌿 Healing can be slow.\n 🌿 Your story doesn’t need to be dramatic to matter.\nThese thoughts are part of a new blog series I just released. If you’re on your own quiet healing journey — this is for you. 💛\n🔗 Link in bio anniesicard.com\n#gentlegrowth #softnessasstrength #healingjourney #soulwork #emotionalwellness #womenwhoreflect #selfcaststudios\n","linkedin_post":"I used to think growth had to be loud. That transformation had to come after a crisis — something big enough to wake you up.\nBut my story has taught me the opposite. Some of the most important shifts in my life didn’t come from breakdowns… they came from quiet choices.\nI’ve spent the last two decades studying human potential, emotional patterns, and how we show up in the world. And the more I learn, the more I believe this:\n🌱 Healing doesn’t always require struggle. Sometimes, it just needs space.\nIf you’ve ever felt like you had to push through pain to grow — I want to offer a different path. One rooted in softness, listening, and creating the right conditions to bloom.\nI just shared three new reflections on this in my latest blog series. I’d love to hear your thoughts.\n➡️ Read more at anniesicard.com\n#emotionalintelligence #healingjourney #selfawareness #humanpotential\n","primary_color":"{{primary_color}}","accent_color":"{{accent_color}}","text_color":"{{text_color}}","background_color":"{{background_color}}","heading_font":"{{heading_font}}","body_font":"{{body_font}}","rendered_bio_html":"{{rendered_bio_html}}","rendered_blog_post_1":"{{rendered_blog_post_1}}","rendered_blog_post_2":"{{rendered_blog_post_2}}","rendered_blog_post_3":"{{rendered_blog_post_3}}","rendered_blog_post_4":"{{rendered_blog_post_4}}","rendered_footer_slogan":"{{rendered_footer_slogan}}","secondary_color":"{{secondary_color}}","quote_1":"{{quote_1}}","quote_2":"{{quote_2}}","quote_3":"{{quote_3}}","profile_image_url":"{{profile_image_url}}"};
+      window.siteContent = {
+  "facebook_url": "{{facebook_url}}",
+  "facebook_post": "{{facebook_post}}",
+  "twitter_url": "{{twitter_url}}",
+  "twitter_post": "{{twitter_post}}",
+  "instagram_url": "{{instagram_url}}",
+  "instagram_post": "{{instagram_post}}",
+  "linkedin_url": "{{linkedin_url}}",
+  "linkedin_post": "{{linkedin_post}}",
+  "client_name": "{{client_name}}",
+  "client_website": "{{client_website}}",
+  "style_package": "{{style_package}}",
+  "current_year": "{{current_year}}",
+  "rendered_title": "{{rendered_title}}",
+  "rendered_subtitle": "{{rendered_subtitle}}",
+  "primary_color": "{{primary_color}}",
+  "accent_color": "{{accent_color}}",
+  "text_color": "{{text_color}}",
+  "background_color": "{{background_color}}",
+  "heading_font": "{{heading_font}}",
+  "body_font": "{{body_font}}",
+  "rendered_bio_html": "{{rendered_bio_html}}",
+  "rendered_blog_post_1": "{{rendered_blog_post_1}}",
+  "rendered_blog_post_2": "{{rendered_blog_post_2}}",
+  "rendered_blog_post_3": "{{rendered_blog_post_3}}",
+  "rendered_blog_post_4": "{{rendered_blog_post_4}}",
+  "rendered_footer_slogan": "{{rendered_footer_slogan}}",
+  "secondary_color": "{{secondary_color}}",
+  "quote_1": "{{quote_1}}",
+  "quote_2": "{{quote_2}}",
+  "quote_3": "{{quote_3}}",
+  "profile_image_url": "{{profile_image_url}}"
+};
       
       // Disable Supabase loading
       async function loadContent() {
@@ -47,7 +79,7 @@
             </div>
             <div class="hero-content">
                 <div class="hero-text">
-                    <h1 data-key="rendered_title">Annie Sicard</h1>
+                    <h1 data-key="rendered_title">{{client_name}}</h1>
                     <p data-key="rendered_subtitle">Exploring the human journey with heart, depth, and quiet wisdom.</p>
                 </div>
                 <div class="hero-image">
@@ -66,7 +98,7 @@
         <!-- Bio Section -->
         <section class="bio">
             <h2>About</h2>
-            <div data-key="rendered_bio_html">Hi, I’m Annie Sicard — a lifelong student of the human spirit and the quiet strength that lives in all of us.
+            <div data-key="rendered_bio_html">Hi, I’m {{client_name}} — a lifelong student of the human spirit and the quiet strength that lives in all of us.
 For as long as I can remember, I’ve been drawn to understanding how we grow — emotionally, spiritually, and psychologically. In my twenties, that curiosity led me deep into the human potential movement. Since then, I’ve spent decades exploring the inner landscape through books, research, conversations, and soul-searching. My path hasn’t been linear, but it’s been real — guided by the desire to understand who we are, how we show up, and where we’re going as human beings.
 Much of my insight has come from my own story. I was shaped by a childhood where emotional connection was often out of reach — and that distance made me sensitive, observant, and quietly determined to learn a different way of being. I’ve learned that healing doesn’t come through force. It happens like nature does — when the conditions are right. With enough light, water, and space, we begin to bloom.
 This space is an invitation. Whether you're navigating change, searching for clarity, or simply trying to come home to yourself — I’m here to walk with you, hold space for your story, and explore what’s possible when we listen more deeply to who we are.
@@ -490,7 +522,7 @@ Sometimes the most powerful healing comes in silence — in the small moments wh
         <!-- Footer -->
         <footer>
             <p data-key="rendered_footer_slogan">Lets connect, annsicard42@gmail.com</p>
-            <p class="copyright"> 2025 All rights reserved anniesicard.com - Built by <a href="https://www.selfcaststudios.com/" target="_blank" rel="noopener noreferrer">Self Cast Studio</a></p>
+            <p class="copyright"> 2025 All rights reserved {{client_website}} - Built by <a href="https://www.selfcaststudios.com/" target="_blank" rel="noopener noreferrer">Self Cast Studio</a></p>
         </footer>
     </div>
 
