@@ -8,8 +8,8 @@ const app = require('./app');
 // Import keep-alive service (prevents Render free tier from spinning down)
 const { startKeepAlive } = require('./utils/keep_alive');
 
-// Define port
-const PORT = process.env.PORT || 3000;
+// Define port (using 3001 instead of 3000 to avoid conflicts)
+const PORT = process.env.PORT || 3001;
 
 // Start server
 const server = app.listen(PORT, () => {

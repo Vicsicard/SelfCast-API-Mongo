@@ -1,15 +1,36 @@
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+// Static site script.js
+// This is a modified version of the script.js file that works with static sites
 
 // Initialize site content storage
-window.siteContent = {};
+window.siteContent = window.siteContent || {};
 
-// Load Google Fonts
+// Load Google Fonts safely
 function loadFonts(headingFont, bodyFont) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = `https://fonts.googleapis.com/css2?family=${headingFont.replace(' ', '+')}&family=${bodyFont.replace(' ', '+')}&display=swap`;
-    document.head.appendChild(link);
+    try {
+        // Default fonts if not provided
+        headingFont = headingFont || 'Roboto';
+        bodyFont = bodyFont || 'Open Sans';
+        
+        // Process font names to work with Google Fonts
+        headingFont = headingFont.replace(/,.*$/, '').trim(); // Remove any fallback fonts
+        bodyFont = bodyFont.replace(/,.*$/, '').trim(); // Remove any fallback fonts
+        
+        // Skip loading custom fonts if using system fonts
+        if (headingFont.toLowerCase().includes('arial') || 
+            headingFont.toLowerCase().includes('sans-serif') ||
+            headingFont.toLowerCase().includes('system-ui')) {
+            console.log('Using system fonts, skipping Google Fonts loading');
+            return;
+        }
+        
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(headingFont)}&family=${encodeURIComponent(bodyFont)}&display=swap`;
+        document.head.appendChild(link);
+        console.log(`Loaded Google Fonts: ${headingFont}, ${bodyFont}`);
+    } catch (error) {
+        console.error('Error loading fonts:', error);
+    }
 }
 
 // Inject dynamic theme styles
@@ -19,215 +40,268 @@ function injectStyles(styles) {
 
     const css = `
         :root {
-            --primary-color: ${styles.primary_color};
-            --secondary-color: ${styles.secondary_color};
-            --accent-color: ${styles.accent_color};
-            --text-color: ${styles.text_color};
-            --background-color: ${styles.background_color};
-            --heading-font: '${styles.heading_font}', sans-serif;
-            --body-font: '${styles.body_font}', sans-serif;
+            --primary-color: ${styles.primary_color || '#3498db'};
+            --secondary-color: ${styles.secondary_color || '#2c3e50'};
+            --accent-color: ${styles.accent_color || '#e74c3c'};
+            --text-color: ${styles.text_color || '#333333'};
+            --background-color: ${styles.background_color || '#ffffff'};
+            --heading-font: '${styles.heading_font || 'Roboto'}', sans-serif;
+            --body-font: '${styles.body_font || 'Open Sans'}', sans-serif;
         }
     `;
 
     style.textContent = css;
 }
 
-// Get project ID from URL or use default
+// Get project ID from URL path or URL parameter
 function getProjectId() {
+    // Try to get project ID from URL path first (e.g., /sites/project-id/)
+    const pathMatch = window.location.pathname.match(/\/sites\/([\w-]+)/);
+    if (pathMatch && pathMatch[1]) {
+        console.log('Using project ID from URL path:', pathMatch[1]);
+        return pathMatch[1];
+    }
+    
+    // Fall back to URL parameter
     const urlParams = new URLSearchParams(window.location.search);
     const projectId = urlParams.get('project_id');
-    console.log('Using default project ID: annie-sicard-123');
-    return projectId || 'annie-sicard-123';
+    if (projectId) {
+        console.log('Using project ID from URL parameter:', projectId);
+        return projectId;
+    }
+    
+    // Fall back to global variable if defined
+    if (typeof PROJECT_ID !== 'undefined') {
+        console.log('Using project ID from global variable:', PROJECT_ID);
+        return PROJECT_ID;
+    }
+    
+    console.log('No project ID found, using default');
+    return 'default-project';
 }
 
 // Load and inject content
-async function loadContent() {
+function loadContent() {
     try {
+        console.log('Loading content for static site');
         const projectId = getProjectId();
         console.log('Loading content for project:', projectId);
-
-        // Fetch all content from Supabase
-        const { data: contentData, error: contentError } = await supabase
-            .from('dynamic_content')
-            .select('*')
-            .eq('project_id', projectId);
-
-        if (contentError) throw contentError;
-        console.log('Content data:', contentData);
-
-        // Convert array to object for theme styles
-        const themeData = {};
-        contentData.forEach(item => {
-            themeData[item.key] = item.value;
-        });
-
+        
+        // Check if we need to load content from the API first
+        if (!window.siteContent || Object.keys(window.siteContent).length === 0) {
+            console.log('No preloaded content found, attempting to load from API');
+            fetchAndLoadContent(projectId);
+            return;
+        }
+        
+        console.log('Content data:', Object.keys(window.siteContent));
+        
+        // Set default values for missing theme properties
+        const themeData = {
+            primary_color: window.siteContent.primary_color || '#3498db',
+            secondary_color: window.siteContent.secondary_color || '#2c3e50',
+            accent_color: window.siteContent.accent_color || '#e74c3c',
+            text_color: window.siteContent.text_color || '#333333',
+            background_color: window.siteContent.background_color || '#ffffff',
+            heading_font: window.siteContent.heading_font || 'Roboto',
+            body_font: window.siteContent.body_font || 'Open Sans'
+        };
+        
         // Load fonts and inject styles
-        loadFonts(themeData.heading_font || 'Roboto', themeData.body_font || 'Open Sans');
+        loadFonts(themeData.heading_font, themeData.body_font);
         injectStyles(themeData);
-
-        // Process each content item and store for modal use
-        contentData.forEach(item => {
-            // Store content for modal use
-            window.siteContent[item.key] = item.value;
-            
-            // Debug: Log all keys and values
-            console.log(`Processing key: ${item.key}, value: ${item.value}`);
-            
-            // Special handling for profile image
-            if (item.key === 'profile_image_url') {
-                const profileImg = document.querySelector('img[data-key="profile_image_url"]');
-                if (profileImg) {
-                    // Only update if the image is a placeholder or matches the old URL
-                    if (profileImg.src.includes('placeholder') || 
-                        profileImg.src.includes('image06.jpg')) {
-                        console.log('Setting profile image src to:', item.value);
-                        profileImg.src = item.value;
-                    } else {
-                        console.log('Keeping existing profile image:', profileImg.src);
-                    }
-                } else {
-                    console.error('Profile image element not found');
-                }
-            }
-            
-            // Find elements with matching data-key
-            const elements = document.querySelectorAll(`[data-key="${item.key}"]`);
-            console.log(`Found ${elements.length} elements with data-key="${item.key}"`);
-            
-            elements.forEach(element => {
-                if (item.key === 'rendered_bio_html') {
-                    // Store original bio content
-                    element.innerHTML = item.value;
-                    
-                    // Create fun fact cards from bio content
-                    createBioCards(item.value, element);
-                } else if (item.key.includes('_url')) {
-                    // Handle URLs differently based on element type
-                    if (element.tagName === 'IMG') {
-                        // For image elements, set the src attribute
-                        console.log(`Setting image src for ${item.key}:`, element, item.value);
-                        element.src = item.value;
-                    } else {
-                        // For link elements, set the href attribute
-                        element.href = item.value;
-                    }
-                } else if (item.key.startsWith('rendered_blog_post_') || item.key.includes('_post')) {
-                    // Create excerpt for blog and social posts
-                    console.log('Creating excerpt for:', item.key);
-                    console.log('Full content:', item.value);
-                    
-                    // Try to find first paragraph or description
-                    let excerpt;
-                    if (item.value.includes('Description:')) {
-                        // For blog posts that have a description section
-                        const description = item.value.split('Description:')[1].split('\n\n')[0].trim();
-                        excerpt = description.length > 300 ? description.substring(0, 300) + '...' : description;
-                    } else {
-                        // For social posts or other content
-                        const text = item.value.split('\n')[0];
-                        excerpt = text.length > 300 ? text.substring(0, 300) + '...' : text;
-                    }
-                    console.log('Created excerpt:', excerpt);
-                    element.textContent = excerpt;
-                } else {
-                    // For other content (titles, text, etc.)
-                    element.textContent = item.value;
-                }
-            });
-        });
-
+        
+        // Apply all content to elements with matching data-key attributes
+        applyContentToElements();
+        
+        console.log('Static site loaded - all content pre-embedded');
     } catch (error) {
-        console.error('Error loading content:', error);
+        console.error('Error loading static content:', error);
+    }
+}
+
+// Apply all content to elements with matching data-key attributes
+function applyContentToElements() {
+    // Get all elements with data-key attribute
+    const elements = document.querySelectorAll('[data-key]');
+    
+    elements.forEach(element => {
+        const key = element.getAttribute('data-key');
+        let content = window.siteContent[key];
+        
+        // Handle special case for profile image
+        if (key === 'profile_image_url' && content) {
+            if (element.tagName === 'IMG') {
+                element.src = content;
+                element.alt = 'Profile';
+            }
+            return;
+        }
+        
+        // Handle bio content special case
+        if ((key === 'bio_html' || key === 'rendered_bio_html') && content) {
+            element.innerHTML = content;
+            return;
+        }
+        
+        // Set content for other elements
+        if (content) {
+            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                element.value = content;
+            } else {
+                element.textContent = content;
+            }
+        }
+    });
+    
+    // Special handling for profile image (with class selector)
+    if (window.siteContent.profile_image_url) {
+        const profileImages = document.querySelectorAll('img.profile-image');
+        profileImages.forEach(img => {
+            img.src = window.siteContent.profile_image_url;
+            img.alt = 'Profile';
+        });
+    }
+    
+    // Handle blog posts
+    for (let i = 1; i <= 4; i++) {
+        const titleKey = `blog_${i}_title`;
+        const contentKey = `blog_${i}`;
+        
+        if (window.siteContent[titleKey]) {
+            const titleElements = document.querySelectorAll(`[data-key="${titleKey}"]`);
+            const contentElements = document.querySelectorAll(`[data-key="${contentKey}"]`);
+            
+            titleElements.forEach(el => {
+                el.textContent = window.siteContent[titleKey];
+            });
+            
+            contentElements.forEach(el => {
+                el.textContent = window.siteContent[contentKey];
+            });
+        }
+    }
+}
+
+// Fetch content from API if needed
+async function fetchAndLoadContent(projectId) {
+    try {
+        // Determine if we're in development or production
+        const isLocalDevelopment = 
+            window.location.hostname === 'localhost' || 
+            window.location.hostname.includes('127.0.0.1');
+        
+        // Set API URL based on environment
+        const apiBaseUrl = isLocalDevelopment
+            ? 'http://localhost:3001/api'
+            : '/api';
+        
+        console.log(`Fetching content from API: ${apiBaseUrl}/projects/${projectId}/content`);
+        
+        const response = await fetch(`${apiBaseUrl}/projects/${projectId}/content`);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch content: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Content data:', data);
+        
+        // Convert array to object format expected by the site
+        if (Array.isArray(data)) {
+            window.siteContent = {};
+            data.forEach(item => {
+                window.siteContent[item.key] = item.value;
+            });
+        } else if (data.content && Array.isArray(data.content)) {
+            window.siteContent = {};
+            data.content.forEach(item => {
+                window.siteContent[item.key] = item.value;
+            });
+        }
+        
+        // Now that we have content, apply it
+        loadContent();
+    } catch (error) {
+        console.error('Error fetching content:', error);
     }
 }
 
 // Create fun fact cards from bio content
 function createBioCards(bioContent, element) {
-    // Use static words for the cards
-    const words = ['Mind', 'Body', 'Soul'];
+    if (!bioContent || !element) return;
     
-    // Create a container for the cards
-    const cardsContainer = document.createElement('div');
-    cardsContainer.className = 'bio-cards';
+    // Clear existing cards
+    element.innerHTML = '';
     
-    // Create a card for each word
-    words.forEach(word => {
+    // Create cards from paragraphs
+    const paragraphs = bioContent.split('</p>');
+    paragraphs.forEach(paragraph => {
+        if (!paragraph.trim()) return;
+        
         const card = document.createElement('div');
         card.className = 'bio-card';
-        
-        // Gradient styled word
-        const wordElem = document.createElement('span');
-        wordElem.className = 'bio-card-title';
-        wordElem.textContent = word;
-        card.appendChild(wordElem);
-        
-        cardsContainer.appendChild(card);
+        card.innerHTML = paragraph + '</p>';
+        element.appendChild(card);
     });
-    
-    // Insert the cards after the bio content
-    element.parentNode.insertBefore(cardsContainer, element.nextSibling);
 }
 
 // Modal functions
 function openModal(type) {
-    const modal = document.getElementById('modal');
-    const modalTitle = document.getElementById('modal-title');
+    const modal = document.getElementById('content-modal');
     const modalContent = document.getElementById('modal-content');
+    const modalTitle = document.getElementById('modal-title');
     
-    // Get content based on type
-    let title, content;
-    if (type.startsWith('blog-')) {
-        // For blog posts
-        const blogNum = type.replace('blog-', '');
-        const blogKey = `rendered_blog_post_${blogNum}`;
-        content = window.siteContent[blogKey];
-        
-        // Split content into sections
-        const sections = content.split('\n\n');
-        title = sections[0].replace(/["]/g, ''); // First line is the title
-        
-        // Format content with proper spacing
-        const formattedContent = sections.slice(1).map(section => {
-            if (section.startsWith('Description:')) {
-                return `<p class="description">${section.replace('Description:', '<strong>Description:</strong>')}</p>`;
-            }
-            return `<p>${section}</p>`;
-        }).join('');
-        
-        modalContent.innerHTML = formattedContent;
-    } else {
-        // For social media posts
-        const postKey = `${type}_post`;
-        content = window.siteContent[postKey];
-        title = type.charAt(0).toUpperCase() + type.slice(1) + ' Update';
-        
-        // Format social media content with line breaks
-        modalContent.innerHTML = content.split('\n').map(line => 
-            line.trim() ? `<p>${line}</p>` : ''
-        ).join('');
+    if (!modal || !modalContent || !modalTitle) return;
+    
+    // Set modal content based on type
+    let content = '';
+    let title = '';
+    
+    switch (type) {
+        case 'bio':
+            title = 'About Me';
+            content = window.siteContent.bio_html || window.siteContent.rendered_bio_html || '';
+            break;
+        case 'contact':
+            title = 'Contact Information';
+            content = `
+                <div class="contact-info">
+                    <p><strong>Email:</strong> ${window.siteContent.email || 'Not provided'}</p>
+                    <p><strong>Phone:</strong> ${window.siteContent.phone || 'Not provided'}</p>
+                    <p><strong>Location:</strong> ${window.siteContent.location || 'Not provided'}</p>
+                </div>
+            `;
+            break;
+        default:
+            title = 'Information';
+            content = 'No content available.';
     }
-
-    // Set modal title
-    modalTitle.innerHTML = `<h2>${title}</h2>`;
     
-    // Show modal
+    modalTitle.textContent = title;
+    modalContent.innerHTML = content;
     modal.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
+    
+    // Add body class to prevent scrolling
+    document.body.classList.add('modal-open');
 }
 
 function closeModal() {
-    const modal = document.getElementById('modal');
+    const modal = document.getElementById('content-modal');
+    if (!modal) return;
+    
     modal.style.display = 'none';
-    document.body.style.overflow = 'auto';
+    document.body.classList.remove('modal-open');
 }
 
 // Close modal when clicking outside
-window.onclick = function(event) {
-    const modal = document.getElementById('modal');
-    if (event.target == modal) {
+document.addEventListener('click', function(event) {
+    const modal = document.getElementById('content-modal');
+    if (!modal) return;
+    
+    if (event.target === modal) {
         closeModal();
     }
-}
+});
 
 // Close modal on escape key
 document.addEventListener('keydown', function(event) {
@@ -236,32 +310,24 @@ document.addEventListener('keydown', function(event) {
     }
 });
 
-// Initialize content on page load
-document.addEventListener('DOMContentLoaded', function() {
-    loadContent();
-});
-
 // Parallax effect for hero section
 function initParallax() {
+    const heroSection = document.querySelector('.hero-section');
+    if (!heroSection) return;
+    
     window.addEventListener('scroll', function() {
-        const scrollPosition = window.pageYOffset;
-        const heroSection = document.querySelector('.hero');
-        const layerBack = document.querySelector('.layer-back');
-        const layerMid = document.querySelector('.layer-mid');
+        const scrollPosition = window.scrollY;
+        const offset = scrollPosition * 0.4;
         
-        // Only apply parallax if hero is in view
-        if (heroSection) {
-            const heroRect = heroSection.getBoundingClientRect();
-            if (heroRect.bottom > 0 && heroRect.top < window.innerHeight) {
-                const scrollSpeed = 0.5; // Adjust for more/less effect
-                if (layerBack) layerBack.style.transform = `translateY(${scrollPosition * scrollSpeed * 0.5}px) translateZ(-10px) scale(2)`;
-                if (layerMid) layerMid.style.transform = `translateY(${scrollPosition * scrollSpeed * 0.3}px) translateZ(-5px) scale(1.5)`;
-            }
-        }
+        heroSection.style.backgroundPositionY = `calc(50% + ${offset}px)`;
     });
 }
 
 // Initialize parallax effect
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize the site
+    loadContent();
     initParallax();
+    
+    console.log('Static site initialized');
 });

@@ -8,7 +8,6 @@
 const fs = require('fs').promises;
 const path = require('path');
 const Project = require('../models/Project');
-const directSocialTitleFix = require('./direct-social-fix'); // Import the specialized social title fix function
 
 // Base templates directory
 const TEMPLATES_DIR = path.join(__dirname, '../../templates');
@@ -132,26 +131,11 @@ async function generateSite(projectId) {
       }
     }
     
-    // Apply the DIRECT social media title fix for maximum reliability
-    console.log('Applying DIRECT social media title fix...');
-    indexHtml = directSocialTitleFix(indexHtml, contentMap);
-    console.log('DIRECT social media title fix applied');
-    
     // Write the generated index.html
     await fs.writeFile(path.join(OUTPUT_DIR, projectId, 'index.html'), indexHtml);
     
-    // Generate a config.js file for the site with the content map
+    // Create a config.js file for the site with the content map
     await generateConfigJs(path.join(OUTPUT_DIR, projectId), projectId, contentMap);
-    
-    // Copy the social-title-fix.js script to ensure titles are displayed correctly
-    try {
-      const socialTitleFixPath = path.join(TEMPLATES_DIR, 'standard', 'social-title-fix.js');
-      const outputSocialTitleFixPath = path.join(OUTPUT_DIR, projectId, 'social-title-fix.js');
-      await fs.copyFile(socialTitleFixPath, outputSocialTitleFixPath);
-      console.log(`Copied social-title-fix.js to ${outputSocialTitleFixPath}`);
-    } catch (error) {
-      console.error('Error copying social-title-fix.js:', error);
-    }
     
     // Determine the site URL
     const isProduction = process.env.NODE_ENV === 'production';

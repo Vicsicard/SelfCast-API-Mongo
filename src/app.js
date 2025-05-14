@@ -11,8 +11,8 @@ const path = require('path');
 require('dotenv').config();
 
 // Import routes
-const projectRoutes = require('./routes/projects');
-const debugRoutes = require('./routes/debug');
+const projectRoutes = require('./routes/projects-fixed'); // Using fixed version with better error handling
+const debugRoutes = require('./routes/debug-simplified');
 
 // Initialize Express app
 const app = express();
@@ -29,20 +29,52 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Configure CORS
+// Configure CORS with improved error handling
 const corsOptions = {
-  origin: process.env.NODE_ENV === 'production'
-    ? [
-        'https://self-cast-api-mongo.vercel.app', 
-        'https://selfcast-dynamic.vercel.app',
-        'https://selfcast-api-mongo.onrender.com',
-        'https://user.selfcaststudios.com'
-      ]
-    : '*', // Allow all origins in development
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Define allowed origins based on environment
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+      ? [
+          'https://self-cast-api-mongo.vercel.app', 
+          'https://selfcast-dynamic.vercel.app',
+          'https://selfcast-api-mongo.onrender.com',
+          'https://user.selfcaststudios.com'
+        ]
+      : ['*']; // Allow all origins in development
+    
+    // Add localhost and 127.0.0.1 variations for development and testing
+    if (process.env.NODE_ENV !== 'production') {
+      allowedOrigins.push('http://localhost:3000');
+      allowedOrigins.push('http://localhost:5500');
+      allowedOrigins.push('http://127.0.0.1:3000');
+      allowedOrigins.push('http://127.0.0.1:5500');
+      // Include proxy ports for browser preview
+      for (let port = 50000; port < 60000; port++) {
+        allowedOrigins.push(`http://127.0.0.1:${port}`);
+      }
+    }
+    
+    // Check if origin is allowed or is a wildcard match
+    if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.log(`CORS blocked request from: ${origin}`);
+      // In development, allow anyway for easier debugging
+      if (process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   preflightContinue: false,
   optionsSuccessStatus: 204,
-  credentials: true
+  credentials: true,
+  maxAge: 86400 // 24 hours
 };
 app.use(cors(corsOptions));
 
@@ -157,23 +189,34 @@ app.use('/sites/:projectId', async (req, res, next) => {
   try {
     const projectId = req.params.projectId;
     
-    // Special case: if projectId is 'config.js', don't try to generate a site
-    if (projectId === 'config.js') {
-      // Check if there's a global config.js in the public directory
-      const fs = require('fs').promises;
-      const globalConfigPath = path.join(__dirname, '../public/config.js');
+    // Check if projectId looks like a file (contains a file extension)
+    if (/\.(js|css|html|jpg|png|gif|svg|json|ico)$/i.test(projectId)) {
+      console.log(`Received request for file ${projectId} directly at project level, skipping site generation`);
       
-      try {
-        await fs.access(globalConfigPath);
-        // Serve the global config.js file
-        return res.sendFile(globalConfigPath);
-      } catch (error) {
-        // Global config.js doesn't exist, return a 404
-        return res.status(404).json({
-          error: 'Not found',
-          message: 'Global config.js file not found'
-        });
+      // Special case: if projectId is 'config.js', check for global config
+      if (projectId === 'config.js') {
+        // Check if there's a global config.js in the public directory
+        const fs = require('fs').promises;
+        const globalConfigPath = path.join(__dirname, '../public/config.js');
+        
+        try {
+          await fs.access(globalConfigPath);
+          // Serve the global config.js file
+          return res.sendFile(globalConfigPath);
+        } catch (error) {
+          // Global config.js doesn't exist, return a 404
+          return res.status(404).json({
+            error: 'Not found',
+            message: 'Global config.js file not found'
+          });
+        }
       }
+      
+      // For other files, return 404
+      return res.status(404).json({
+        error: 'Not found',
+        message: `${projectId} is not a valid project ID. Direct file access at this level is not supported.`
+      });
     }
     
     const fs = require('fs').promises;

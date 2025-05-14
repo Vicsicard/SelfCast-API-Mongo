@@ -1,5 +1,35 @@
-// Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+// Initialize Supabase client (if available) or create a mock version
+let supabase;
+try {
+    if (window.supabase) {
+        supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.key);
+        console.log('Supabase client initialized');
+    } else {
+        // Create a mock version for static sites that already have embedded content
+        console.log('Static site loaded - all content pre-embedded');
+        supabase = {
+            from: () => ({
+                select: () => ({
+                    eq: () => ({
+                        then: (callback) => callback({ data: [], error: null })
+                    })
+                })
+            })
+        };
+    }
+} catch (error) {
+    console.error('Error initializing Supabase:', error);
+    // Create a mock version
+    supabase = {
+        from: () => ({
+            select: () => ({
+                eq: () => ({
+                    then: (callback) => callback({ data: [], error: null })
+                })
+            })
+        })
+    };
+}
 
 // Initialize site content storage
 window.siteContent = {};
@@ -34,10 +64,33 @@ function injectStyles(styles) {
 
 // Get project ID from URL or use default
 function getProjectId() {
+    // First check query parameters
     const urlParams = new URLSearchParams(window.location.search);
-    const projectId = urlParams.get('project_id');
-    console.log('Using default project ID: annie-sicard-123');
-    return projectId || 'annie-sicard-123';
+    const queryProjectId = urlParams.get('project_id');
+    if (queryProjectId) {
+        console.log('Using project ID from query parameter:', queryProjectId);
+        return queryProjectId;
+    }
+    
+    // Then try to extract from URL path
+    const pathParts = window.location.pathname.split('/');
+    // Find the 'sites' segment and get the next segment
+    const sitesIndex = pathParts.findIndex(part => part === 'sites');
+    if (sitesIndex !== -1 && sitesIndex < pathParts.length - 1) {
+        const pathProjectId = pathParts[sitesIndex + 1];
+        console.log('Using project ID from URL path:', pathProjectId);
+        return pathProjectId;
+    }
+    
+    // If we can't determine the project ID, use the current directory name
+    const currentDir = window.location.pathname.split('/').filter(Boolean).pop();
+    if (currentDir && currentDir !== 'index.html') {
+        console.log('Using current directory as project ID:', currentDir);
+        return currentDir;
+    }
+    
+    console.log('Could not determine project ID, using default');
+    return 'default-project';
 }
 
 // Load and inject content
@@ -111,6 +164,13 @@ async function loadContent() {
                         // For link elements, set the href attribute
                         element.href = item.value;
                     }
+                } else if (item.key.includes('_title_')) {
+                    // EXPLICIT HANDLING FOR SOCIAL MEDIA TITLES
+                    console.log('Processing social media title:', item.key, item.value);
+                    element.textContent = item.value;
+                    
+                    // Log the element to make sure the update happened
+                    console.log('Updated element:', element.outerHTML);
                 } else if (item.key.startsWith('rendered_blog_post_') || item.key.includes('_post')) {
                     // Create excerpt for blog and social posts
                     console.log('Creating excerpt for:', item.key);

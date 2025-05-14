@@ -299,4 +299,102 @@ router.get('/:projectId/site', async (req, res) => {
   }
 });
 
+/**
+ * PUT /api/projects/:projectId
+ * Update content for an existing project
+ */
+router.put('/:projectId', async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    let contentToUpdate;
+    
+    console.log(`Received request to update project: ${projectId}`);    
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
+    // Handle different content formats (direct array or wrapped in content property)
+    if (req.body.content && Array.isArray(req.body.content)) {
+      contentToUpdate = req.body.content;
+      console.log('Using content from req.body.content array');
+    } else if (Array.isArray(req.body)) {
+      contentToUpdate = req.body;
+      console.log('Using content directly from req.body array');
+    } else {
+      // If we receive a single item, wrap it in an array
+      if (req.body.key && req.body.value) {
+        contentToUpdate = [req.body];
+        console.log('Using single content item');
+      } else {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Invalid content format. Expected array or content object' 
+        });
+      }
+    }
+    
+    // Find the project
+    const project = await Project.findOne({ projectId });
+    
+    if (!project) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Project not found' 
+      });
+    }
+    
+    // Update the project content
+    // If the incoming content is the full set, replace the entire array
+    if (contentToUpdate.length > 10) {
+      project.content = contentToUpdate;
+      console.log('Replacing entire content array');
+    } else {
+      // Otherwise, update individual items while preserving others
+      console.log('Updating individual content items');
+      contentToUpdate.forEach(newItem => {
+        const existingIndex = project.content.findIndex(item => item.key === newItem.key);
+        if (existingIndex >= 0) {
+          // Update existing item
+          project.content[existingIndex].value = newItem.value;
+          console.log(`Updated existing item: ${newItem.key}`);
+        } else {
+          // Add new item
+          project.content.push(newItem);
+          console.log(`Added new item: ${newItem.key}`);
+        }
+      });
+    }
+    
+    // Save the updated project
+    await project.save();
+    
+    console.log(`Project ${projectId} updated successfully with ${contentToUpdate.length} content items`);
+    
+    // Regenerate the site automatically after content updates
+    try {
+      console.log(`Automatically regenerating site for project: ${projectId}`);
+      const result = await generateSite(projectId);
+      
+      if (result.success) {
+        console.log(`Site regenerated successfully: ${result.siteUrl}`);
+      } else {
+        console.error(`Site regeneration failed: ${result.error}`);
+      }
+    } catch (regenerateError) {
+      console.error('Error regenerating site:', regenerateError);
+      // We don't fail the request if regeneration fails
+    }
+    
+    res.json({ 
+      success: true, 
+      message: 'Project updated successfully and site regenerated',
+      project_id: projectId
+    });
+  } catch (error) {
+    console.error('Error updating project:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update project' 
+    });
+  }
+});
+
 module.exports = router;

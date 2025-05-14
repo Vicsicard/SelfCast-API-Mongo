@@ -12,7 +12,7 @@ const isProduction = window.location.hostname !== 'localhost' &&
 // Set API URL based on environment
 const apiBaseUrl = isProduction 
     ? 'https://selfcast-api-mongo.onrender.com/api'  // Production Render URL
-    : 'http://localhost:3000/api';                   // Development URL
+    : 'http://localhost:3001/api';                   // Development URL (updated to port 3001)
 
 window.SUPABASE_CONFIG = {
     // These values don't need to be real - our adapter will intercept all Supabase calls
@@ -22,7 +22,11 @@ window.SUPABASE_CONFIG = {
     // MongoDB API settings - used by the adapter
     mongodb: {
         apiUrl: apiBaseUrl,
-        environment: isProduction ? 'production' : 'development'
+        environment: isProduction ? 'production' : 'development',
+        // URL configuration - used for dynamic site URL generation
+        useCustomDomain: isProduction,  // Use custom domain in production
+        customDomain: 'user.selfcaststudios.com',
+        renderUrl: 'selfcast-api-mongo.onrender.com'
     }
 };
 
