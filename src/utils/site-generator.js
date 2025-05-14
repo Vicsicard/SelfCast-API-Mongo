@@ -48,11 +48,32 @@ async function generateSite(projectId) {
       throw new Error(`Project not found: ${projectId}`);
     }
     
-    // Convert content array to a more usable object
+    // Convert content array to a more usable object and validate
     const contentMap = {};
-    project.content.forEach(item => {
-      contentMap[item.key] = item.value;
-    });
+    console.log(`Content array has ${project.content.length} items`);
+    
+    if (!project.content || project.content.length === 0) {
+      console.warn(`Warning: No content found for project ${projectId}. Creating minimal default content.`);
+      // Add minimal default content to prevent errors
+      contentMap.rendered_title = `Site for ${projectId}`;
+      contentMap.rendered_subtitle = "Site content being developed";
+      contentMap.primary_color = "#3498db";
+      contentMap.accent_color = "#2ecc71";
+      contentMap.text_color = "#333333";
+      contentMap.background_color = "#ffffff";
+      contentMap.heading_font = "Roboto";
+      contentMap.body_font = "Open Sans";
+      contentMap.rendered_bio_html = `<p>Content for ${projectId} is being developed.</p>`;
+    } else {
+      project.content.forEach(item => {
+        if (item && item.key) {
+          contentMap[item.key] = item.value;
+          console.log(`Processing content item: ${item.key}`);
+        } else {
+          console.warn('Skipping invalid content item:', item);
+        }
+      });
+    }
     
     // Debug: Log all content keys and values
     console.log('Content keys from database:', project.content.map(item => item.key));
@@ -266,21 +287,9 @@ async function copyTemplateFiles(templateDir, outputDir, contentMap) {
             await fs.mkdir(destPath, { recursive: true });
             await copyTemplateFiles(sourcePath, destPath, contentMap);
           } else if (file === 'script.js') {
-            // Use our custom static script.js instead of the template one
-            console.log('Using custom static script.js instead of template script.js');
-            const staticScriptPath = path.join(__dirname, 'static-script.js');
-            
-            try {
-              // Check if our static script exists
-              await fs.access(staticScriptPath);
-              // Copy our static script instead of the template one
-              await fs.copyFile(staticScriptPath, destPath);
-              console.log('Copied static script.js successfully');
-            } catch (scriptError) {
-              console.warn('Static script not found, using template script:', scriptError);
-              // Fall back to the template script if our static script doesn't exist
-              await fs.copyFile(sourcePath, destPath);
-            }
+            // Always use the template script.js
+            console.log('Using template script.js directly');
+            await fs.copyFile(sourcePath, destPath);
           } else {
             // Copy the file
             await fs.copyFile(sourcePath, destPath);
@@ -311,13 +320,42 @@ function replaceContentPlaceholders(html, contentMap) {
 
   // Replace the hardcoded siteContent object with all content from the database
   // This is critical to ensure all template variables are properly replaced
-  const siteContentReplacement = `window.siteContent = ${JSON.stringify(contentMap)};`;
+  // Ensure contentMap is properly JSON-serializable and handle potential circular references
+  const safeContentMap = {};
+  Object.keys(contentMap).forEach(key => {
+    // Only include string, number, boolean values to avoid serialization issues
+    const value = contentMap[key];
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      safeContentMap[key] = value;
+    } else if (value === null || value === undefined) {
+      safeContentMap[key] = "";
+    } else {
+      // For complex objects, convert to string to avoid circular reference errors
+      try {
+        safeContentMap[key] = JSON.stringify(value);
+      } catch (e) {
+        safeContentMap[key] = String(value);
+      }
+    }
+  });
+  
+  const siteContentReplacement = `window.siteContent = ${JSON.stringify(safeContentMap, null, 2)};`;
   
   // Use a more robust pattern to match the siteContent object
   const siteContentPattern = /window\.siteContent\s*=\s*\{[\s\S]*?\};/;
   if (siteContentPattern.test(processedHtml)) {
     console.log('Found siteContent object in HTML - replacing with all database content');
-    processedHtml = processedHtml.replace(siteContentPattern, siteContentReplacement);
+    try {
+      processedHtml = processedHtml.replace(siteContentPattern, siteContentReplacement);
+      console.log('Successfully replaced siteContent object with database content');
+    } catch (error) {
+      console.error('Error replacing siteContent:', error);
+    }
+    
+    // Also ensure any hardcoded references to Annie Sicard are removed
+    console.log('Checking for hardcoded references to Annie Sicard...');
+    processedHtml = processedHtml.replace(/anniesicard\.com/g, contentMap.client_website || '');
+    processedHtml = processedHtml.replace(/Annie Sicard/g, contentMap.client_name || '');
   } else {
     console.log('WARNING: Could not find siteContent object in HTML template');
   }
