@@ -76,7 +76,7 @@ async function generateSite(projectId, req) {
     const templateFiles = [
       'index.html',
       'script.js',
-      'styles.css',
+      'style.css',
       'modal-functions.js',
       'social-styles.css'
     ];
