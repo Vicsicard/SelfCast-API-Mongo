@@ -3,6 +3,7 @@ services:
     name: selfcast-api-mongo
     env: node
     plan: free
+    branch: combined
     buildCommand: npm install && npm run build
     startCommand: npm start
     healthCheckPath: /

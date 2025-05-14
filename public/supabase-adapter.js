@@ -22,13 +22,10 @@
     // Use the URL from configuration
     API_BASE_URL = window.SUPABASE_CONFIG.mongodb.apiUrl;
   } else if (isProduction) {
-    // Fallback for production
-    const customDomain = window.SUPABASE_CONFIG?.mongodb?.customDomain || 'user.selfcaststudios.com';
-    const renderUrl = window.SUPABASE_CONFIG?.mongodb?.renderUrl || 'selfcast-api-mongo.onrender.com';
-    const useCustomDomain = window.SUPABASE_CONFIG?.mongodb?.useCustomDomain === true;
-    
-    const baseUrl = useCustomDomain ? customDomain : renderUrl;
-    API_BASE_URL = `https://${baseUrl}/api`;
+    // Always use the custom domain in production for consistency
+    const customDomain = 'user.selfcaststudios.com';
+    API_BASE_URL = `https://${customDomain}/api`;
+    console.log('Using custom domain for API access:', customDomain);
   } else {
     // Fallback for development
     API_BASE_URL = 'http://localhost:3001/api';

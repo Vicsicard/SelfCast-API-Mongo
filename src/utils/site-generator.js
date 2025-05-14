@@ -24,6 +24,17 @@ const DEFAULT_TEMPLATE = 'standard';
  */
 async function generateSite(projectId) {
   try {
+    // Check if projectId is a special file name that should not be treated as a project
+    const specialFiles = ['config.js', 'script.js', 'style.css', 'social-title-fix.js'];
+    if (specialFiles.includes(projectId)) {
+      console.log(`Cannot generate site for ${projectId} as it's a special file, not a project ID`);
+      return {
+        success: false,
+        error: `${projectId} is a special file name, not a valid project ID`,
+        message: `Cannot generate site for ${projectId}`
+      };
+    }
+    
     console.log(`Starting site generation for project: ${projectId}`);
     console.log(`Output directory: ${OUTPUT_DIR}`);
     

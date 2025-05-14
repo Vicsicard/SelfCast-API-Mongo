@@ -189,9 +189,10 @@ app.use('/sites/:projectId', async (req, res, next) => {
   try {
     const projectId = req.params.projectId;
     
-    // Check if projectId looks like a file (contains a file extension)
-    if (/\.(js|css|html|jpg|png|gif|svg|json|ico)$/i.test(projectId)) {
-      console.log(`Received request for file ${projectId} directly at project level, skipping site generation`);
+    // Prevent site generation for special files like config.js
+    const specialFiles = ['config.js', 'script.js', 'style.css', 'social-title-fix.js'];
+    if (specialFiles.includes(projectId)) {
+      console.log(`Received request for special file ${projectId}, serving global file instead of generating site`);
       
       // Special case: if projectId is 'config.js', check for global config
       if (projectId === 'config.js') {
@@ -211,6 +212,11 @@ app.use('/sites/:projectId', async (req, res, next) => {
           });
         }
       }
+    }
+    
+    // Check if projectId looks like a file (contains a file extension)
+    if (/\.(js|css|html|jpg|png|gif|svg|json|ico)$/i.test(projectId)) {
+      console.log(`Received request for file ${projectId} directly at project level, skipping site generation`);
       
       // For other files, return 404
       return res.status(404).json({

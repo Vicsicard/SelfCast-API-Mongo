@@ -11,8 +11,8 @@ const isProduction = window.location.hostname !== 'localhost' &&
 
 // Set API URL based on environment
 const apiBaseUrl = isProduction 
-    ? 'https://selfcast-api-mongo.onrender.com/api'  // Production Render URL
-    : 'http://localhost:3001/api';                   // Development URL (updated to port 3001)
+    ? 'https://user.selfcaststudios.com/api'  // Production custom domain URL
+    : 'http://localhost:3001/api';           // Development URL (updated to port 3001)
 
 window.SUPABASE_CONFIG = {
     // These values don't need to be real - our adapter will intercept all Supabase calls
