@@ -62,6 +62,37 @@ async function generateSite(projectId) {
     // Add current year to content
     contentMap.current_year = new Date().getFullYear().toString();
     
+    // Map blog_1, blog_2, etc. to rendered_blog_post_1, rendered_blog_post_2 for compatibility
+    for (let i = 1; i <= 4; i++) {
+      if (contentMap[`blog_${i}`] && !contentMap[`rendered_blog_post_${i}`]) {
+        contentMap[`rendered_blog_post_${i}`] = contentMap[`blog_${i}`];
+        console.log(`Mapped blog_${i} to rendered_blog_post_${i}`);
+      }
+    }
+    
+    // Map social media titles to ensure they're correctly connected between editor and website
+    const socialPlatforms = ['facebook', 'twitter', 'instagram', 'linkedin'];
+    socialPlatforms.forEach(platform => {
+      for (let i = 1; i <= 4; i++) {
+        // Make sure both title_N and title fields are populated
+        if (contentMap[`${platform}_title_${i}`]) {
+          contentMap[`${platform}_title`] = contentMap[`${platform}_title_1`]; // Use first title as default title
+          console.log(`Mapped ${platform}_title_${i} to ${platform}_title`);
+        } else if (contentMap[`${platform}_title`] && !contentMap[`${platform}_title_${i}`]) {
+          contentMap[`${platform}_title_${i}`] = contentMap[`${platform}_title`];
+          console.log(`Mapped ${platform}_title to ${platform}_title_${i}`);
+        }
+      }
+    });
+    
+    // Make sure banner image fields are properly populated, even if empty
+    for (let i = 1; i <= 3; i++) {
+      if (!contentMap.hasOwnProperty(`banner_image_${i}_url`)) {
+        contentMap[`banner_image_${i}_url`] = "";
+        console.log(`Added empty banner_image_${i}_url field`);
+      }
+    }
+    
     // Always use the standard template for now
     // let templateStyle = contentMap.style_package || DEFAULT_TEMPLATE;
     let templateStyle = 'standard';
@@ -85,6 +116,20 @@ async function generateSite(projectId) {
     
     // Replace content placeholders in the HTML
     indexHtml = replaceContentPlaceholders(indexHtml, contentMap);
+    
+    // Post-processing step: Fix banner images that might still have URLs as text
+    for (let i = 1; i <= 3; i++) {
+      const bannerKey = `banner_image_${i}_url`;
+      if (contentMap[bannerKey] && contentMap[bannerKey].trim() !== '') {
+        const imgUrl = contentMap[bannerKey];
+        
+        // Look for banner dividers that still have the URL as text
+        const bannerWithTextUrlRegex = new RegExp(`<div[^>]*class="banner-divider banner-divider-${i}"[^>]*data-key="banner_image_${i}_url"[^>]*>\s*${imgUrl.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\s*</div>`, 'g');
+        indexHtml = indexHtml.replace(bannerWithTextUrlRegex, `<div class="banner-divider banner-divider-${i}" data-key="banner_image_${i}_url" style="background-image: url('${imgUrl}');"></div>`);
+        
+        console.log(`Final banner image ${i} post-processing complete`);
+      }
+    }
     
     // Write the generated index.html
     await fs.writeFile(path.join(OUTPUT_DIR, projectId, 'index.html'), indexHtml);
@@ -237,11 +282,201 @@ function replaceContentPlaceholders(html, contentMap) {
   // Replace data-key attributes with actual content
   let processedHtml = html;
 
-  // First, ensure window.siteContent is properly set with all content
-  processedHtml = processedHtml.replace(
-    /window\.siteContent\s*=\s*\{[^\}]*\};/,
-    `window.siteContent = ${JSON.stringify(contentMap)};`
-  );
+  // Replace the hardcoded siteContent object with all content from the database
+  // This is critical to ensure all template variables are properly replaced
+  const siteContentReplacement = `window.siteContent = ${JSON.stringify(contentMap)};`;
+  
+  // Use a more robust pattern to match the siteContent object
+  const siteContentPattern = /window\.siteContent\s*=\s*\{[\s\S]*?\};/;
+  if (siteContentPattern.test(processedHtml)) {
+    console.log('Found siteContent object in HTML - replacing with all database content');
+    processedHtml = processedHtml.replace(siteContentPattern, siteContentReplacement);
+  } else {
+    console.log('WARNING: Could not find siteContent object in HTML template');
+  }
+  
+  // Process each key in the contentMap directly to ensure consistent handling
+  console.log('Using direct key-by-key replacement approach for maximum consistency');
+  
+  // First pass: Replace all handlebars templates in HTML content (not in JS strings)
+  Object.keys(contentMap).forEach(key => {
+    if (contentMap[key]) {
+      // Ensure we're only dealing with string values
+      const value = String(contentMap[key]);
+      const pattern = new RegExp('{{' + key + '}}', 'g');
+      
+      console.log(`Replacing template {{${key}}} with value: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
+      processedHtml = processedHtml.replace(pattern, value);
+    }
+  });
+  
+  // Process banner images specially to apply them as background images with style attributes
+  for (let i = 1; i <= 3; i++) {
+    const bannerKey = `banner_image_${i}_url`;
+    if (contentMap[bannerKey] && contentMap[bannerKey].trim() !== '') {
+      const imgUrl = contentMap[bannerKey];
+      console.log(`Setting banner image ${i} with URL: ${imgUrl}`);
+
+      // Fix for banner divs that include the URL directly inside them
+      const bannerDivWithUrl = new RegExp(`<div class="banner-divider banner-divider-${i}"[^>]*data-key="banner_image_${i}_url"[^>]*>(.*?)</div>`, 'g');
+      processedHtml = processedHtml.replace(bannerDivWithUrl, `<div class="banner-divider banner-divider-${i}" data-key="banner_image_${i}_url" style="background-image: url('${imgUrl}');"></div>`);
+      
+      // Also try the simpler selector
+      const bannerDivider = `<div class="banner-divider banner-divider-${i}" data-key="banner_image_${i}_url">`;
+      const bannerWithImage = `<div class="banner-divider banner-divider-${i}" data-key="banner_image_${i}_url" style="background-image: url('${imgUrl}');">`;  
+      processedHtml = processedHtml.split(bannerDivider).join(bannerWithImage);
+      
+      console.log(`Banner image ${i} replacement completed`);
+    }
+  }
+  
+  // Process social media titles with direct string replacements
+  const socialPlatforms = ['facebook', 'twitter', 'instagram', 'linkedin'];
+  
+  socialPlatforms.forEach(platform => {
+    const capitalizedPlatform = platform.charAt(0).toUpperCase() + platform.slice(1);
+    
+    for (let i = 1; i <= 4; i++) {
+      const titleKey = `${platform}_title_${i}`;
+      if (contentMap[titleKey] && contentMap[titleKey].trim() !== '') {
+        console.log(`Setting ${platform} post ${i} title to: ${contentMap[titleKey]}`);
+        
+        // Replace the default platform title with our specific title
+        const defaultTitle = `${capitalizedPlatform} Update`;
+        
+        // Try multiple approaches to find and replace the social media title
+        
+        // Approach 1: Use regex with capturing groups to preserve any attributes
+        const titleRegex = new RegExp(`(<h4[^>]*data-key=["']${titleKey}["'][^>]*>)([^<]*)(</h4>)`, 'g');
+        processedHtml = processedHtml.replace(titleRegex, `$1${contentMap[titleKey]}$3`);
+        
+        // Approach 2: Try specific patterns for known templates
+        let searchString1 = `<h4 class="post-title" data-key="${titleKey}">${defaultTitle}</h4>`;
+        let replaceString1 = `<h4 class="post-title" data-key="${titleKey}">${contentMap[titleKey]}</h4>`;
+        processedHtml = processedHtml.split(searchString1).join(replaceString1);
+        
+        // Approach 3: Try without the class
+        let searchString2 = `<h4 data-key="${titleKey}">${defaultTitle}</h4>`;
+        let replaceString2 = `<h4 data-key="${titleKey}">${contentMap[titleKey]}</h4>`;
+        processedHtml = processedHtml.split(searchString2).join(replaceString2);
+        
+        // Approach 4: Most aggressive - replace any h4 with the right data-key
+        const aggTitleRegex = new RegExp(`<h4[^>]*data-key=["']${titleKey}["'][^>]*>[^<]*</h4>`, 'g');
+        processedHtml = processedHtml.replace(aggTitleRegex, `<h4 class="post-title" data-key="${titleKey}">${contentMap[titleKey]}</h4>`);
+        
+        // Log what we're doing
+        console.log(`Applied multiple replacement strategies for ${titleKey}`);
+      }
+    }
+  });
+
+  // Second pass: Process handlebars templates that might still exist (in case of nested templates)
+  let handlebarsMatch;
+  let handlebarsRegex = /{{([^}]+)}}/g;
+  let tempHtml = processedHtml;
+  let replacements = [];
+  
+  while ((handlebarsMatch = handlebarsRegex.exec(tempHtml)) !== null) {
+    const key = handlebarsMatch[1];
+    const value = contentMap[key] || '';
+    
+    if (value) {
+      console.log(`Second pass replacing {{${key}}} with value: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
+      replacements.push({
+        pattern: handlebarsMatch[0],
+        value: value
+      });
+    } else {
+      console.log(`Warning: No value found for template {{${key}}}`);
+    }
+  }
+  
+  // Apply all second-pass replacements
+  replacements.forEach(rep => {
+    // Escape special regex characters in the search pattern
+    const searchPattern = rep.pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    processedHtml = processedHtml.replace(new RegExp(searchPattern, 'g'), rep.value);
+  });
+
+  // Handle social media titles and posts with enhanced debugging - using the existing socialPlatforms array
+  
+  console.log('DEBUG: Beginning social media title replacements');
+  console.log('DEBUG: Available content keys:', Object.keys(contentMap).filter(key => key.includes('_title_')));
+  
+  // Better approach: Directly operate on the DOM structure
+  socialPlatforms.forEach(platform => {
+    for (let i = 1; i <= 4; i++) {
+      const titleKey = `${platform}_title_${i}`;
+      
+      if (contentMap[titleKey] && contentMap[titleKey].trim() !== '') {
+        console.log(`DEBUG: Found content for ${titleKey}: "${contentMap[titleKey]}". Looking for elements to replace...`);
+        
+        // More comprehensive approach: Use multiple methods to try to replace titles
+        const titleValue = contentMap[titleKey];
+        const defaultTitle = `${platform.charAt(0).toUpperCase() + platform.slice(1)} Update`;
+        
+        // Method 1: Direct string replacement
+        const exactTitlePattern = `<h4 class="post-title" data-key="${titleKey}">${defaultTitle}</h4>`;
+        const exactReplacement = `<h4 class="post-title" data-key="${titleKey}">${titleValue}</h4>`;
+        
+        // Method 2: Use regular expression with flexible matching
+        const regexPattern = new RegExp(`<h4[^>]*data-key=["']${titleKey}["'][^>]*>[^<]*<\/h4>`, 'g');
+        
+        // Method 3: More aggressive pattern matching - find any h4 that has our data-key
+        const flexiblePattern = new RegExp(`<h4[^>]*data-key=["']${titleKey}["'][^>]*>.*?<\/h4>`, 'g');
+        
+        // Apply all replacement methods
+        let replacementCount = 0;
+        
+        // 1. Direct replacement
+        const before1 = processedHtml;
+        processedHtml = processedHtml.split(exactTitlePattern).join(exactReplacement);
+        if (before1 !== processedHtml) {
+          replacementCount++;
+          console.log(`DEBUG: Method 1 successfully replaced title for ${titleKey}`);
+        }
+        
+        // 2. Regex replacement
+        const before2 = processedHtml;
+        processedHtml = processedHtml.replace(regexPattern, exactReplacement);
+        if (before2 !== processedHtml) {
+          replacementCount++;
+          console.log(`DEBUG: Method 2 successfully replaced title for ${titleKey}`);
+        }
+        
+        // 3. Flexible replacement
+        const before3 = processedHtml;
+        processedHtml = processedHtml.replace(flexiblePattern, exactReplacement);
+        if (before3 !== processedHtml) {
+          replacementCount++;
+          console.log(`DEBUG: Method 3 successfully replaced title for ${titleKey}`);
+        }
+        
+        // Report if no replacements occurred
+        if (replacementCount === 0) {
+          console.log(`WARNING: Could not find title element for ${titleKey} to replace!`);
+          
+          // Check if the title exists in any form
+          if (processedHtml.includes(`data-key="${titleKey}"`)) {
+            console.log(`DEBUG: Found data-key="${titleKey}" but couldn't replace the content`);
+          }
+        }
+      }
+      
+      // Handle post content
+      const contentKey = `${platform}_post_${i}`;
+      if (contentMap[contentKey] && contentMap[contentKey].trim() !== '') {
+        console.log(`Replacing ${platform} post ${i} content with: ${contentMap[contentKey].substring(0, 30)}...`);
+        
+        // Replace content in post cards - using data-key attribute
+        const contentPattern = new RegExp(`<p[^>]*data-key="${contentKey}"[^>]*>[\s\S]*?<\/p>`, 'g');
+        processedHtml = processedHtml.replace(
+          contentPattern,
+          `<p class="excerpt social-excerpt" data-key="${contentKey}">${contentMap[contentKey]}</p>`
+        );
+      }
+    }
+  });
 
   // Log the keys we're looking for in the template
   console.log('Content keys available:', Object.keys(contentMap));
@@ -262,6 +497,12 @@ function replaceContentPlaceholders(html, contentMap) {
     processedHtml = processedHtml.replace(
       /<img[^>]*class="profile-image"[^>]*>/g,
       `<img class="profile-image" src="${profileImageUrl}" alt="Profile">`
+    );
+    
+    // Handle Handlebars-style template variables like {{profile_image_url}}
+    processedHtml = processedHtml.replace(
+      /{{profile_image_url}}/g,
+      profileImageUrl
     );
   }
   
@@ -303,7 +544,8 @@ function replaceContentPlaceholders(html, contentMap) {
       `blog_${i}_content`,
       `blog${i}_content`,
       `rendered_blog_${i}_content`,
-      `rendered_blog_post_${i}`
+      `rendered_blog_post_${i}`,
+      `blog_${i}` // Add the simple blog_1, blog_2 format used in the database
     ];
     
     // Find the first available title key
@@ -442,7 +684,8 @@ function replaceContentPlaceholders(html, contentMap) {
     const value = contentMap[key] || '';
     
     // Skip if we've already handled this key in the specialized sections above
-    if (key.startsWith('rendered_blog_post_') || key === 'profile_image_url' || colorKeys.includes(key)) {
+    // Don't skip blog content or profile image keys to ensure they get applied
+    if (colorKeys.includes(key)) {
       continue;
     }
     

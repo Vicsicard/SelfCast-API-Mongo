@@ -9,7 +9,7 @@
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📝</text></svg>">
   
   <!-- Load configuration -->
-  <script src="config.js"></script>
+  <script src="config.js?v=20250513"></script>
   
   <!-- Load Supabase adapter (intercepts and redirects to MongoDB) -->
   <script src="supabase-adapter.js"></script>
@@ -773,6 +773,7 @@
                     <li><a href="#social-media" onclick="activateTab('social-media')"><i class="fas fa-share-alt"></i>Social Media</a></li>
                     <li><a href="#styling" onclick="activateTab('styling')"><i class="fas fa-palette"></i>Styling</a></li>
                     <li><a href="#quotes" onclick="activateTab('quotes')"><i class="fas fa-quote-right"></i>Quotes</a></li>
+                    <li><a href="#banner-images" onclick="activateTab('banner-images')"><i class="fas fa-images"></i>Banner Images</a></li>
                     <li><a href="#contact" onclick="activateTab('contact')"><i class="fas fa-envelope"></i>Contact</a></li>
                     <li><a href="#misc" onclick="activateTab('misc')"><i class="fas fa-cog"></i>Miscellaneous</a></li>
                 </ul>
@@ -1282,6 +1283,36 @@
                                 <div class="form-group">
                                     <label for="quote_3">Quote Text</label>
                                     <textarea id="quote_3" name="quote_3"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Banner Images Tab -->
+                    <div class="tab-content" id="banner-images">
+                        <!-- Banner Images Section -->
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Banner Images</h2>
+                                <button type="button" class="collapse-toggle" onclick="toggleSection(this)">−</button>
+                            </div>
+                            <div class="section-content">
+                                <div class="form-group">
+                                    <label for="banner_image_1_url">Banner Image 1 (Between About and Blog)</label>
+                                    <input type="text" id="banner_image_1_url" name="banner_image_1_url" placeholder="Enter direct URL to your banner image">
+                                    <p class="help-text">Recommended size: 1920×600 pixels. This banner appears between the About and Blog sections.</p>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="banner_image_2_url">Banner Image 2 (Between Blog and Social Media)</label>
+                                    <input type="text" id="banner_image_2_url" name="banner_image_2_url" placeholder="Enter direct URL to your banner image">
+                                    <p class="help-text">Recommended size: 1920×600 pixels. This banner appears between the Blog and Social Media sections.</p>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="banner_image_3_url">Banner Image 3 (Between Social Media and Footer)</label>
+                                    <input type="text" id="banner_image_3_url" name="banner_image_3_url" placeholder="Enter direct URL to your banner image">
+                                    <p class="help-text">Recommended size: 1920×600 pixels. This banner appears between the Social Media and Footer sections.</p>
                                 </div>
                             </div>
                         </div>
@@ -1955,60 +1986,95 @@
                         showStatus('Preparing preview...', 'info');
                         
                         try {
-                            // First, save the current content
+                            // First, save the current content - this will also regenerate the site
+                            let siteUrl;
+                            
                             if (currentProjectId) {
                                 const contentItems = collectFormData();
-                                await saveContent(currentProjectId, contentItems);
-                                showStatus('Content saved successfully', 'success');
+                                const saveResult = await saveContent(currentProjectId, contentItems, false, true);
+                                showStatus('Content saved and site updated', 'success');
+                                
+                                // Get the site URL from the save response if available
+                                if (saveResult && saveResult.site_url) {
+                                    siteUrl = saveResult.site_url;
+                                    console.log(`Using site URL from save response: ${siteUrl}`);
+                                }
                             }
                             
                             // Determine if we're in local development
                             const isLocalDevelopment = window.location.hostname === 'localhost' || 
                                                      window.location.hostname === '127.0.0.1';
                             
-                            // First, trigger site generation to ensure it's up to date
-                            try {
-                                // Generate the site first to ensure it's up to date
-                                const generateUrl = isLocalDevelopment
-                                    ? `/api/projects/${selectedProjectId}/generate-site`
-                                    : `https://${window.location.hostname}/api/projects/${selectedProjectId}/generate-site`;
-                                
-                                showStatus('Generating site...', 'info');
-                                const generateResponse = await fetch(generateUrl, { method: 'POST' });
-                                
-                                if (!generateResponse.ok) {
-                                    throw new Error(`Failed to generate site: ${generateResponse.status}`);
+                            // If we didn't get a site URL from the save response, trigger explicit site generation
+                            if (!siteUrl) {
+                                try {
+                                    // Generate the site to ensure it's up to date
+                                    // Use port 3001 instead of 3000 for local development
+                                    const port = isLocalDevelopment ? '3001' : '';
+                                    const portString = port ? `:${port}` : '';
+                                    const hostWithPort = isLocalDevelopment ? `localhost${portString}` : window.location.hostname;
+                                    
+                                    const generateUrl = isLocalDevelopment
+                                        ? `http://${hostWithPort}/api/projects/${selectedProjectId}/generate-site`
+                                        : `https://${hostWithPort}/api/projects/${selectedProjectId}/generate-site`;
+                                    
+                                    showStatus('Generating site...', 'info');
+                                    const generateResponse = await fetch(generateUrl, { method: 'POST' });
+                                    
+                                    const generateResult = await generateResponse.json();
+                                    console.log('Site generation result:', generateResult);
+                                    
+                                    if (generateResult.success) {
+                                        showStatus('Site generated successfully', 'success');
+                                        if (generateResult.siteUrl) {
+                                            siteUrl = generateResult.siteUrl;
+                                        }
+                                    }
+                                } catch (genError) {
+                                    console.error('Error generating site:', genError);
+                                    showStatus(`Error generating site: ${genError.message}`, 'warning');
+                                    // Continue anyway to try opening the site
                                 }
-                                
-                                const generateResult = await generateResponse.json();
-                                console.log('Site generation result:', generateResult);
-                                
-                                if (!generateResult.success) {
-                                    throw new Error(generateResult.error || 'Failed to generate site');
-                                }
-                                
-                                showStatus('Site generated successfully', 'success');
-                            } catch (genError) {
-                                console.error('Error generating site:', genError);
-                                showStatus(`Error generating site: ${genError.message}`, 'warning');
-                                // Continue anyway to try opening the site
                             }
                             
                             // Now open the site
-                            let siteUrl;
-                            if (isLocalDevelopment) {
-                                // Local development - use local static site
+                            if (!siteUrl) {
+                                // Fallback if we didn't get a site URL from API responses
                                 siteUrl = `/sites/${selectedProjectId}/`;
+                            }
+                            
+                            // Check if we're in local development or production
+                            if (isLocalDevelopment) {
                                 showStatus('Opening local site...', 'info');
                             } else {
-                                // Production environment - use custom domain by default
-                                const renderUrl = 'selfcast-api-mongo.onrender.com';
-                                // Use custom domain by default
-                                const useCustomDomain = true; // Custom domain is now ready
-                                const customDomain = 'user.selfcaststudios.com';
+                                // Production environment - use dynamic URL generation
+                                // Get the site URL from the API if available, otherwise use the default
+                                try {
+                                    // First try to get site URL from the API
+                                    const siteInfoResponse = await fetch(`${window.SUPABASE_CONFIG.mongodb.apiUrl}/projects/${selectedProjectId}/site-info`);
+                                    
+                                    if (siteInfoResponse.ok) {
+                                        const siteInfo = await siteInfoResponse.json();
+                                        if (siteInfo && siteInfo.siteUrl) {
+                                            siteUrl = siteInfo.siteUrl;
+                                            console.log('Using API-provided site URL:', siteUrl);
+                                        }
+                                    }
+                                } catch (urlError) {
+                                    console.warn('Error fetching site URL from API:', urlError);
+                                }
                                 
-                                const baseUrl = useCustomDomain ? customDomain : renderUrl;
-                                siteUrl = `https://${baseUrl}/sites/${selectedProjectId}/`;
+                                // If we still don't have a site URL, use the environment configuration
+                                if (!siteUrl) {
+                                    // Check environment variables for domains
+                                    const useCustomDomain = window.SUPABASE_CONFIG.mongodb.useCustomDomain === true;
+                                    const customDomain = window.SUPABASE_CONFIG.mongodb.customDomain || 'user.selfcaststudios.com';
+                                    const renderUrl = window.SUPABASE_CONFIG.mongodb.renderUrl || 'selfcast-api-mongo.onrender.com';
+                                    
+                                    const baseUrl = useCustomDomain ? customDomain : renderUrl;
+                                    siteUrl = `https://${baseUrl}/sites/${selectedProjectId}/`;
+                                    console.log('Using environment-based site URL:', siteUrl);
+                                }
                                 showStatus('Opening site...', 'info');
                             }
                             
@@ -2282,18 +2348,18 @@
         }
         
         // Save content for a project
-        async function saveContent(projectId, contentItems, isAutoSave = false) {
+        async function saveContent(projectId, contentItems, isAutoSave = false, returnResponse = false) {
             try {
                 if (!projectId) {
                     showStatus('No project selected', 'error');
                     updateSaveIndicator('error');
-                    return;
+                    return null;
                 }
                 
                 if (!validateFormData(contentItems)) {
                     showStatus('Please fill in all required fields', 'error');
                     updateSaveIndicator('error');
-                    return;
+                    return null;
                 }
                 
                 // Show saving indicator
@@ -2398,11 +2464,48 @@
                     history.pushState({ projectId: projectId }, '', newUrl);
                 }
                 
+                // If site generation was successful, fetch the site URL
+                let siteData = null;
+                if (returnResponse) {
+                    try {
+                        // Determine if we're in local development
+                        const isLocalDevelopment = window.location.hostname === 'localhost' || 
+                                                window.location.hostname === '127.0.0.1';
+                        
+                        // Use port 3001 instead of 3000 for local development
+                        const port = isLocalDevelopment ? '3001' : '';
+                        const portString = port ? `:${port}` : '';
+                        
+                        // Get site info from API
+                        const siteInfoResponse = await fetch(`http://${window.location.hostname}${portString}/api/projects/${projectId}/site-info`, {
+                            method: 'GET',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        if (siteInfoResponse.ok) {
+                            siteData = await siteInfoResponse.json();
+                            log('Site info response:', siteData);
+                        }
+                    } catch (siteError) {
+                        console.error('Error getting site info:', siteError);
+                        // Don't throw here, just continue
+                    }
+                }
+                
+                // Return success result with site data
+                return siteData || { 
+                    success: true, 
+                    site_url: `/sites/${projectId}/`
+                };
+                
             } catch (error) {
                 console.error('Error saving content:', error);
                 log('Error saving content', error.message);
                 showStatus(`<i class="fas fa-exclamation-triangle"></i><span>Error saving content: ${error.message}</span>`, 'error');
                 updateSaveIndicator('error');
+                return null;
             }
         }
         
