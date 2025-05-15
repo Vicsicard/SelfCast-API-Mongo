@@ -1,9 +1,11 @@
 /**
  * Static Site Generator for SelfCast Dynamic
  * 
- * Generates static HTML sites based on project content and templates
- * Uses the existing template structure from SelfCast Dynamic
+ * IMPORTANT: This file has been modified to use a clean template
+ * without any hardcoded content. The template now uses placeholders
+ * for all content, which are replaced at build time.
  */
+
 
 const fs = require('fs').promises;
 const path = require('path');
@@ -313,6 +315,42 @@ async function copyTemplateFiles(templateDir, outputDir, contentMap) {
  * @returns {string} - Processed HTML
  */
 function replaceContentPlaceholders(html, contentMap) {
+  console.log('USING ENHANCED CLEAN TEMPLATE CONTENT REPLACEMENT');
+  console.log('Replacing content placeholders with content map:', Object.keys(contentMap));
+
+  // Replace data-key attributes with actual content
+  let processedHtml = html;
+  
+  // First, make sure the content map has entries for all expected placeholders
+  // Even if they're empty, to prevent "undefined" values
+  const requiredKeys = [
+    'rendered_title', 'rendered_subtitle', 'rendered_bio_html', 'rendered_footer_slogan',
+    'client_name', 'client_website', 'current_year',
+    'primary_color', 'accent_color', 'text_color', 'background_color',
+    'heading_font', 'body_font'
+  ];
+  
+  // Add blog posts
+  for (let i = 1; i <= 4; i++) {
+    requiredKeys.push(`rendered_blog_post_${i}`);
+  }
+  
+  // Add social media posts
+  const platforms = ['facebook', 'twitter', 'instagram', 'linkedin'];
+  platforms.forEach(platform => {
+    for (let i = 1; i <= 4; i++) {
+      requiredKeys.push(`${platform}_title_${i}`);
+      requiredKeys.push(`${platform}_post_${i}`);
+    }
+  });
+  
+  // Ensure all required keys have values
+  requiredKeys.forEach(key => {
+    if (!contentMap[key]) {
+      console.log(`Adding empty placeholder for missing key: ${key}`);
+      contentMap[key] = '';
+    }
+  });
   console.log('Replacing content placeholders with content map:', Object.keys(contentMap));
 
   // Replace data-key attributes with actual content
